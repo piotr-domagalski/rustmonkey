@@ -15,8 +15,19 @@ impl Iterator for Lexer<'_> {
 
         if let Some(ch) = self.input.next() {
             match ch {
-                '=' => Some(Token::Assign),
+                '=' => { match self.input.peek() {
+                        Some('=') => {self.input.next(); Some(Token::Equals)},
+                        _ => Some(Token::Assign), } },
                 '+' => Some(Token::Plus),
+                '-' => Some(Token::Minus),
+                '*' => Some(Token::Asterisk),
+                '/' => Some(Token::Slash),
+
+                '!' => { match self.input.peek() {
+                        Some('=') => {self.input.next(); Some(Token::NotEquals)},
+                        _ => Some(Token::Bang), } },
+                '<' => Some(Token::LessThan),
+                '>' => Some(Token::GreaterThan),
                 ',' => Some(Token::Comma),
                 ';' => Some(Token::Semicolon),
                 '(' => Some(Token::LeftRound),
@@ -49,6 +60,11 @@ impl Iterator for Lexer<'_> {
                     match word.as_str() {
                         "let" => Some(Token::Let),
                         "fn" => Some(Token::Function),
+                        "if" => Some(Token::If),
+                        "else" => Some(Token::Else),
+                        "return" => Some(Token::Return),
+                        "true" => Some(Token::Bool(true)),
+                        "false" => Some(Token::Bool(false)),
                         ident => Some(Token::Identifier(word)),
                     }
                 }
@@ -152,6 +168,75 @@ let result = add(five, ten);";
 
         for expected in output {
             assert_eq!(lexer.next(), expected);
+        }
+    }
+
+    #[test]
+    fn test_code_remaining() {
+        let input = "!-/*5;
+5 < 10 > 5;
+if (5 < 10) {
+return true;
+} else {
+return false;
 }
+10 == 10;
+10 != 9;";
+        
+        let mut lexer = Lexer::new(input);
+
+        let output = [
+            Some(Token::Bang),
+            Some(Token::Minus),
+            Some(Token::Slash),
+            Some(Token::Asterisk),
+            Some(Token::Integer(5)),
+            Some(Token::Semicolon),
+
+            Some(Token::Integer(5)),
+            Some(Token::LessThan),
+            Some(Token::Integer(10)),
+            Some(Token::GreaterThan),
+            Some(Token::Integer(5)),
+            Some(Token::Semicolon),
+
+            Some(Token::If),
+            Some(Token::LeftRound),
+            Some(Token::Integer(5)),
+            Some(Token::LessThan),
+            Some(Token::Integer(10)),
+            Some(Token::RightRound),
+            Some(Token::LeftCurly),
+
+            Some(Token::Return),
+            Some(Token::Bool(true)),
+            Some(Token::Semicolon),
+
+            Some(Token::RightCurly),
+            Some(Token::Else),
+            Some(Token::LeftCurly),
+
+            Some(Token::Return),
+            Some(Token::Bool(false)),
+            Some(Token::Semicolon),
+
+            Some(Token::RightCurly),
+
+            Some(Token::Integer(10)),
+            Some(Token::Equals),
+            Some(Token::Integer(10)),
+            Some(Token::Semicolon),
+
+            Some(Token::Integer(10)),
+            Some(Token::NotEquals),
+            Some(Token::Integer(9)),
+            Some(Token::Semicolon),
+
+            None,
+        ];
+
+        for expected in output {
+            assert_eq!(lexer.next(), expected);
+        }
     }
 }
