@@ -3,7 +3,7 @@ use crate::token::*;
 use std::str::Chars;
 use std::iter::Peekable;
 
-struct Lexer<'a> {
+pub struct Lexer<'a> {
     input: Peekable<Chars<'a>>
 }
 
@@ -65,7 +65,7 @@ impl Iterator for Lexer<'_> {
                         "return" => Some(Token::Return),
                         "true" => Some(Token::Bool(true)),
                         "false" => Some(Token::Bool(false)),
-                        ident => Some(Token::Identifier(word)),
+                        _ => Some(Token::Identifier(word)),
                     }
                 }
                 other => Some(Token::Illegal(String::from(other))),
@@ -79,7 +79,7 @@ impl Iterator for Lexer<'_> {
 }
 
 impl<'a> Lexer<'a> {
-    fn new(s: &str) -> Lexer {
+    pub fn new(s: &str) -> Lexer {
         Lexer {
             input: s.chars().peekable(),
         }
