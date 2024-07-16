@@ -7,81 +7,86 @@ pub struct Lexer<'a> {
     input: Peekable<Chars<'a>>
 }
 
-impl Iterator for Lexer<'_> {
-    type Item = Token;
-    
-    fn next(&mut self) -> Option<Self::Item>{
-        while self.input.next_if(|ch| ch.is_whitespace()).is_some() {}
-
-        if let Some(ch) = self.input.next() {
-            match ch {
-                '=' => { match self.input.peek() {
-                        Some('=') => {self.input.next(); Some(Token::Equals)},
-                        _ => Some(Token::Assign), } },
-                '+' => Some(Token::Plus),
-                '-' => Some(Token::Minus),
-                '*' => Some(Token::Asterisk),
-                '/' => Some(Token::Slash),
-
-                '!' => { match self.input.peek() {
-                        Some('=') => {self.input.next(); Some(Token::NotEquals)},
-                        _ => Some(Token::Bang), } },
-                '<' => Some(Token::LessThan),
-                '>' => Some(Token::GreaterThan),
-                ',' => Some(Token::Comma),
-                ';' => Some(Token::Semicolon),
-                '(' => Some(Token::LeftRound),
-                ')' => Some(Token::RightRound),
-                '{' => Some(Token::LeftCurly),
-                '}' => Some(Token::RightCurly),
-                '[' => Some(Token::LeftSquare),
-                ']' => Some(Token::RightSquare),
-                ch if ch.is_numeric() => {
-                    let remaining_chars = std::iter::from_fn(
-                        || self.input.next_if(|ch| ch.is_numeric())
-                        );
-                    let string = std::iter::once(ch)
-                        .chain(remaining_chars)
-                        .collect::<String>();
-                    if let Ok(int) = string.parse::<i64>() {
-                        Some(Token::Integer(int))
-                    }
-                    else {
-                        Some(Token::Illegal(string))
-                    }
-                },
-                ch if ch.is_alphabetic() => {
-                    let remaining_chars = std::iter::from_fn(
-                        || self.input.next_if(|ch| ch.is_alphanumeric() || *ch == '_')
-                        );
-                    let word = std::iter::once(ch)
-                        .chain(remaining_chars)
-                        .collect::<String>();
-                    match word.as_str() {
-                        "let" => Some(Token::Let),
-                        "fn" => Some(Token::Function),
-                        "if" => Some(Token::If),
-                        "else" => Some(Token::Else),
-                        "return" => Some(Token::Return),
-                        "true" => Some(Token::Bool(true)),
-                        "false" => Some(Token::Bool(false)),
-                        _ => Some(Token::Identifier(word)),
-                    }
-                }
-                other => Some(Token::Illegal(String::from(other))),
-            }
-        }
-        else {
-            None
-        }
-    }
-
-}
-
 impl<'a> Lexer<'a> {
     pub fn new(s: &str) -> Lexer {
         Lexer {
             input: s.chars().peekable(),
+        }
+    }
+
+    fn eat_whitespace(&mut self) {
+        while self.input.next_if(|ch| ch.is_whitespace()).is_some() {};
+    }
+
+    fn collect_matching_to_string<F>(&mut self, ch: char, mut p: F) -> String 
+    where
+        F: FnMut(&char) -> bool
+    {
+        std::iter::once(ch)
+            .chain(std::iter::from_fn(
+                || self.input.next_if(|ch| p(ch))))
+            .collect::<String>()
+    }
+}
+
+impl Iterator for Lexer<'_> {
+    type Item = Token;
+    
+    fn next(&mut self) -> Option<Self::Item>{
+        self.eat_whitespace();
+
+        match self.input.next() {
+            None => None,
+            Some(ch) => {
+                Some(match ch {
+                    '=' if Some(&'=') == self.input.peek()
+                        => { self.input.next(); Token::Equals },
+                    '=' => Token::Assign,
+                    '+' => Token::Plus,
+                    '-' => Token::Minus,
+                    '*' => Token::Asterisk,
+                    '/' => Token::Slash,
+
+                    '!' if Some(&'=') == self.input.peek()
+                        => { self.input.next(); Token::NotEquals },
+                    '!' => Token::Bang,
+                    '<' => Token::LessThan,
+                    '>' => Token::GreaterThan,
+
+                    ',' => Token::Comma,
+                    ';' => Token::Semicolon,
+
+                    '(' => Token::LeftRound,
+                    ')' => Token::RightRound,
+                    '{' => Token::LeftCurly,
+                    '}' => Token::RightCurly,
+                    '[' => Token::LeftSquare,
+                    ']' => Token::RightSquare,
+
+                    ch if ch.is_numeric() => {
+                        let string = self.collect_matching_to_string(ch, |ch| ch.is_numeric());
+                        match string.parse::<i64>() {
+                            Ok(int) => Token::Integer(int),
+                            _ => Token::Illegal(string),
+                        }
+                    },
+                    ch if ch.is_alphabetic() => {
+                        let string = self.collect_matching_to_string(ch, |ch| ch.is_alphanumeric() || *ch == '_');
+                        match string.as_str() {
+                            "let" => Token::Let,
+                            "fn" => Token::Function,
+                            "if" => Token::If,
+                            "else" => Token::Else,
+                            "return" => Token::Return,
+                            "true" => Token::Bool(true),
+                            "false" => Token::Bool(false),
+                            _ => Token::Identifier(string),
+                        }
+                    },
+
+                    other => Token::Illegal(String::from(other)),
+                })
+            },
         }
     }
 }
