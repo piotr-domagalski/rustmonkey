@@ -35,58 +35,61 @@ impl Iterator for Lexer<'_> {
     fn next(&mut self) -> Option<Self::Item>{
         self.eat_whitespace();
 
-        match self.input.next() {
-            None => None,
-            Some(ch) => {
-                Some(match ch {
-                    '=' if Some(&'=') == self.input.peek()
-                        => { self.input.next(); Token::Equals },
-                    '=' => Token::Assign,
-                    '+' => Token::Plus,
-                    '-' => Token::Minus,
-                    '*' => Token::Asterisk,
-                    '/' => Token::Slash,
+        if let Some(ch) = self.input.next() {
+            Some(match ch {
+                '=' if Some(&'=') == self.input.peek()
+                    => { self.input.next(); Token::Equals },
+                '=' => Token::Assign,
+                '+' => Token::Plus,
+                '-' => Token::Minus,
+                '*' => Token::Asterisk,
+                '/' => Token::Slash,
 
-                    '!' if Some(&'=') == self.input.peek()
-                        => { self.input.next(); Token::NotEquals },
-                    '!' => Token::Bang,
-                    '<' => Token::LessThan,
-                    '>' => Token::GreaterThan,
+                '!' if Some(&'=') == self.input.peek()
+                    => { self.input.next(); Token::NotEquals },
+                '!' => Token::Bang,
+                '<' => Token::LessThan,
+                '>' => Token::GreaterThan,
 
-                    ',' => Token::Comma,
-                    ';' => Token::Semicolon,
+                ',' => Token::Comma,
+                ';' => Token::Semicolon,
 
-                    '(' => Token::LeftRound,
-                    ')' => Token::RightRound,
-                    '{' => Token::LeftCurly,
-                    '}' => Token::RightCurly,
-                    '[' => Token::LeftSquare,
-                    ']' => Token::RightSquare,
+                '(' => Token::LeftRound,
+                ')' => Token::RightRound,
+                '{' => Token::LeftCurly,
+                '}' => Token::RightCurly,
+                '[' => Token::LeftSquare,
+                ']' => Token::RightSquare,
 
-                    ch if ch.is_numeric() => {
-                        let string = self.collect_matching_to_string(ch, |ch| ch.is_numeric());
-                        match string.parse::<i64>() {
-                            Ok(int) => Token::Integer(int),
-                            _ => Token::Illegal(string),
-                        }
-                    },
-                    ch if ch.is_alphabetic() => {
-                        let string = self.collect_matching_to_string(ch, |ch| ch.is_alphanumeric() || *ch == '_');
-                        match string.as_str() {
-                            "let" => Token::Let,
-                            "fn" => Token::Function,
-                            "if" => Token::If,
-                            "else" => Token::Else,
-                            "return" => Token::Return,
-                            "true" => Token::Bool(true),
-                            "false" => Token::Bool(false),
-                            _ => Token::Identifier(string),
-                        }
-                    },
+                ch if ch.is_numeric() => {
+                    let string = self.collect_matching_to_string(
+                        ch, |ch| ch.is_numeric()
+                        );
+                    match string.parse::<i64>() {
+                        Ok(int) => Token::Integer(int),
+                        _ => Token::Illegal(string),
+                    }
+                },
+                ch if ch.is_alphabetic() => {
+                    let string = self.collect_matching_to_string(
+                        ch, |ch| ch.is_alphanumeric() || *ch == '_'
+                        );
+                    match string.as_str() {
+                        "let" => Token::Let,
+                        "fn" => Token::Function,
+                        "if" => Token::If,
+                        "else" => Token::Else,
+                        "return" => Token::Return,
+                        "true" => Token::Bool(true),
+                        "false" => Token::Bool(false),
+                        _ => Token::Identifier(string),
+                    }
+                },
 
-                    other => Token::Illegal(String::from(other)),
-                })
-            },
+                other => Token::Illegal(String::from(other)),
+            })
+        } else {
+            None
         }
     }
 }
