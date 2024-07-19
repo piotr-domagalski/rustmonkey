@@ -4,11 +4,17 @@ use crate::token::Token;
 use crate::ast::TokenIter;
 use std::iter::Peekable;
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum PrefixOperator {
+    Inverse,
+    Negation,
+}
+
 #[derive(Debug)]
 pub enum Expression {
     Identifier { identifier_expression: IdentifierExpression},
     Literal { literal: Literal},
-    Prefix { prefix_expression: Box<PrefixExpression> },
+    Prefix { operator: PrefixOperator, expression: Box<Expression> },
     /*
     Prefix(PrefixExpression),
     Infix(InfixExpression),
@@ -22,7 +28,7 @@ impl Expression {
         let left_expression = match iter.peek() {
             Some(Token::Identifier(_)) => Ok(Expression::Identifier {identifier_expression: IdentifierExpression::parse(iter)? }),
             Some(Token::Integer(_)) => Ok(Expression::Literal {literal: Literal::parse(iter)? }),
-            Some(Token::Bang) | Some(Token::Minus) => Ok(Expression::Prefix {prefix_expression: Box::new(PrefixExpression::parse(iter)?) }),
+            Some(Token::Bang) | Some(Token::Minus) => Expression::parse_prefix_expression(iter),
             _ => return Err("unimplemented expression type")
         };
 
@@ -30,6 +36,21 @@ impl Expression {
         iter.next();
 
         left_expression
+    }
+
+    fn parse_prefix_expression<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Expression, &'static str> {
+        let operator = match iter.peek() {
+            Some(Token::Minus) => {
+                iter.next();
+                PrefixOperator::Inverse
+            },
+            Some(Token::Bang) => {
+                iter.next();
+                PrefixOperator::Negation
+            },
+            _ => return Err("Expected ! or - operator"),
+        };
+        Ok(Expression::Prefix { operator: operator, expression: Box::new(Expression::parse(iter)?)})
     }
 }
 
@@ -63,26 +84,6 @@ impl Literal {
                 Ok(Literal::Bool(*b)),
             _ => 
                 Err("expected integer literal token"),
-        }
-    }
-}
-#[derive(Debug)]
-pub enum PrefixExpression{
-    Inverse{expression: Expression},
-    Negation{expression: Expression},
-}
-impl PrefixExpression {
-    fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<PrefixExpression, &'static str> {
-        match iter.peek() {
-            Some(Token::Minus) => {
-                iter.next();
-                Ok(PrefixExpression::Inverse{expression: Expression::parse(iter)?})
-            }
-            Some(Token::Bang) => {
-                iter.next();
-                Ok(PrefixExpression::Negation{expression: Expression::parse(iter)?})
-            }
-            _ => Err("Expected ! or -"),
         }
     }
 }
@@ -128,44 +129,38 @@ mod tests {
     }
 
     #[test]
-    fn test_prefix_inverse() {
-        let input = [Token::Minus, Token::Integer(5), Token::Semicolon];
+    fn test_prefix_expressions() {
+        struct Test {
+            tokens: [Token; 3],
+            operator: PrefixOperator,
+            integer: i64,
+        };
+        let tests = [
+            Test {
+                tokens: [Token::Minus, Token::Integer(5), Token::Semicolon],
+                operator: PrefixOperator::Inverse,
+                integer: 5,
+            },
+            Test {
+                tokens: [Token::Bang, Token::Integer(15), Token::Semicolon],
+                operator: PrefixOperator::Negation,
+                integer: 15
+            },
+        ];
 
-        let output = Expression::parse(&mut input.into_iter().peekable()).expect("hardcoded tokens shouldn't fail to parse");
-    
-        if let Expression::Prefix{prefix_expression} = output {
-            if let PrefixExpression::Inverse{expression} = *prefix_expression {
-                if let Expression::Literal{literal: Literal::Integer(int)} = expression{
-                    assert_eq!(int, 5);
+        for test in tests {
+            let parsed = Expression::parse(&mut test.tokens.into_iter().peekable()).expect("Hardcoded tokens shouldn't fail to parse");
+
+            if let Expression::Prefix{operator, expression} = parsed {
+                assert_eq!(operator, test.operator);
+                if let Expression::Literal{literal: Literal::Integer(int)} = *expression {
+                    assert_eq!(int, test.integer);
                 } else {
                     panic!("expected Expression::Literal(Literal::Integer), got, {:?}", expression)
                 }
             } else {
-                panic!("expected PrefixExpression::Inverse, got {:?}", *prefix_expression);
+                panic!("expected Expression::Prefix, got {:?}", parsed);
             }
-        } else {
-            panic!("expected Expression::Prefix, got {:?}", output);
-        }
-    }
-
-    #[test]
-    fn test_prefix_negation() {
-        let input = [Token::Bang, Token::Integer(15), Token::Semicolon];
-
-        let output = Expression::parse(&mut input.into_iter().peekable()).expect("hardcoded tokens shouldn't fail to parse");
-    
-        if let Expression::Prefix{prefix_expression} = output {
-            if let PrefixExpression::Negation{expression} = *prefix_expression {
-                if let Expression::Literal{literal: Literal::Integer(int)} = expression{
-                    assert_eq!(int, 15);
-                } else {
-                    panic!("expected Expression::Literal(Literal::Integer), got, {:?}", expression)
-                }
-            } else {
-                panic!("expected PrefixExpression::Inverse, got {:?}", *prefix_expression);
-            }
-        } else {
-            panic!("expected Expression::Prefix, got {:?}", output);
         }
     }
 }
