@@ -5,7 +5,7 @@ use crate::ast::Expression;
 use crate::ast::IdentifierExpression;
 use std::iter::Peekable;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Statement {
     Let{ identifier: IdentifierExpression, expression: Expression},
     Return { expression: Expression},
@@ -17,7 +17,27 @@ pub enum Statement {
     None,
     */
 }
+//builders
+impl Statement {
+    pub fn new_let(identifier: &str, expression: Expression) -> Statement{
+        Statement::Let{
+            identifier: IdentifierExpression::new(identifier),
+            expression: expression
+        }
+    }
+    pub fn new_return(expression: Expression) -> Statement {
+        Statement::Return {
+            expression
+        }
+    }
 
+    pub fn new_expr(expression: Expression) -> Statement {
+        Statement::Expression {
+            expression
+        }
+    }
+}
+//parsing
 impl Statement {
     pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Statement, &'static str>
     {

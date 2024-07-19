@@ -4,13 +4,13 @@ use crate::token::Token;
 use crate::ast::TokenIter;
 use std::iter::Peekable;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum PrefixOperator {
     Inverse,
     Negation,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Expression {
     Identifier { identifier_expression: IdentifierExpression},
     Literal { literal: Literal},
@@ -22,6 +22,23 @@ pub enum Expression {
     If(IfExpression),
     */
 }
+//builders
+impl Expression {
+    pub fn new_ident(identifier: &str) -> Expression{
+        Expression::Identifier { identifier_expression: IdentifierExpression::new(identifier) }
+    }
+    pub fn new_int(integer: i64) -> Expression {
+        Expression::Literal { literal: Literal::new_int(integer) }
+    }
+    pub fn new_bool(boolean: bool) -> Expression {
+        Expression::Literal { literal: Literal::new_bool(boolean) }
+    }
+    pub fn new_prefix(operator: PrefixOperator, expression: Expression) -> Expression {
+        Expression::Prefix { operator, expression: Box::new(expression) }
+    }
+    //TODO new_infix
+}
+//parsing
 impl Expression {
     pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Expression, &'static str>
     {
@@ -54,10 +71,17 @@ impl Expression {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct IdentifierExpression{
     pub identifier: String,
 }
+
+impl IdentifierExpression {
+    pub fn new(identifier: &str) -> IdentifierExpression {
+        IdentifierExpression{ identifier: String::from(identifier) }
+    }
+}
+
 impl IdentifierExpression {
     fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<IdentifierExpression, &'static str> {
         if let Some(Token::Identifier(ident)) = iter.peek() {
@@ -69,12 +93,19 @@ impl IdentifierExpression {
 
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum Literal{
     Integer(i64),
     Bool(bool),
 }
-
+impl Literal {
+    pub fn new_int(integer: i64) -> Literal {
+        Literal::Integer(integer)
+    }
+    pub fn new_bool(boolean: bool) -> Literal {
+        Literal::Bool(boolean)
+    }
+}
 impl Literal {
     fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Literal, &'static str> {
         match iter.peek() {

@@ -4,11 +4,18 @@ use crate::ast::TokenIter;
 use crate::ast::Statement;
 use std::iter::Peekable;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Program {
     pub statements: Vec<Statement>
 }
+impl Program {
+    pub fn new_from_statements(statements: &[Statement]) -> Program{
+        Program {
+            statements: statements.to_vec()
+        }
 
+    }
+}
 impl Program {
     pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Program, Vec<&'static str>> 
     {
