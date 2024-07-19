@@ -1,4 +1,5 @@
-use crate::token::Token;
+#![allow(unused)]
+
 use crate::ast::TokenIter;
 use crate::ast::Statement;
 use std::iter::Peekable;
@@ -9,7 +10,7 @@ pub struct Program {
 }
 
 impl Program {
-    pub fn parse_program<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Program, Vec<&'static str>> 
+    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Program, Vec<&'static str>> 
     {
         let mut statements: Vec<Statement> = vec![];
         let mut errors: Vec<&str> = vec![];
@@ -28,5 +29,22 @@ impl Program {
         else {
             Err(errors)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::token::Token;
+    use crate::lexer::Lexer;
+
+    #[test]
+    fn test_parser_new() {
+        let tokens = vec![Token::Let, Token::Identifier(String::from("x")), Token::Assign, Token::Integer(5), Token::Semicolon];
+        let _parser_from_vec = Program::parse(&mut tokens.into_iter().peekable());
+        
+        let code = "let x = 5;";
+        let lexer = Lexer::new(code);
+        let _parser_from_lexer = Program::parse(&mut lexer.peekable());
     }
 }

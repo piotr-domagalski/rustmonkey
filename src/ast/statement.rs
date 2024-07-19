@@ -1,3 +1,4 @@
+#![allow(unused)]
 use crate::token::Token;
 use crate::ast::TokenIter;
 use crate::ast::Expression;
@@ -42,6 +43,8 @@ impl Statement {
             Ok(expr) => expr,
             _ => return Err("failed to parse expression"),
         };
+
+        if None == iter.next_if_eq(&Token::Semicolon) { return Err("semicolon expected")};
     
         Ok(
             Statement::Let {
@@ -61,9 +64,26 @@ impl Statement {
             _ => return Err("failed to parse expression"),
         };
     
+        if None == iter.next_if_eq(&Token::Semicolon) { return Err("semicolon expected")};
+
         Ok(
             Statement::Return {
                 expression: expression,
+            }
+        )
+    }
+
+    fn parse_expression_statement<I: TokenIter> (iter: &mut Peekable<I>) -> Result<Statement, &'static str> {
+        let expression = match Expression::parse(iter) {
+            Ok(expr) => expr,
+            _ => return Err("failed to parse expression")
+        };
+
+        iter.next_if(|tok| *tok == Token::Semicolon);
+
+        Ok( 
+            Statement::Expression {
+                expression,
             }
         )
     }
@@ -121,16 +141,14 @@ mod tests {
 
         for input in inputs {
             let parsed = Statement::parse(&mut input.tokens.into_iter().peekable());
-            if let Ok(Statement::Let{identifier: ident_expr, expression: _expr}) = parsed {
+            if let Ok(Statement::Let{identifier: ident_expr, expression: expr}) = parsed {
                 assert_eq!(ident_expr.identifier, input.identifier);
 
-                /*
-                if let Expression::Literal(LiteralExpression::Integer(int)) = expr{
+                if let Expression::Literal{literal: crate::ast::Literal::Integer(int)} = expr{
                     assert_eq!(int, input.value);
                 } else {
                     panic!("Expected integer literal expression, got {:?}", expr);
                 }
-                */
             }
             else {
                 panic!("Expected let statement, got {:?}", parsed)
@@ -176,13 +194,11 @@ mod tests {
         for input in inputs {
             let parsed = Statement::parse(&mut input.tokens.into_iter().peekable());
             if let Ok(Statement::Return{expression: expr}) = parsed {
-                /*
-                if let Expression::Literal(LiteralExpression::Integer(int)) = expr{
+                if let Expression::Literal{literal: crate::ast::Literal::Integer(int)} = expr{
                     assert_eq!(int, input.value);
                 } else {
                     panic!("Expected integer literal expression, got {:?}", expr);
                 }
-                */
             }
             else {
                 panic!("Expected let statement, got {:?}", parsed)
