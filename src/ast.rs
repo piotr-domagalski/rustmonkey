@@ -7,6 +7,7 @@ pub struct Program {
 pub enum Statement {
     Let(LetStatement),
     Return(ReturnStatement),
+    Expression(ExpressionStatement),
     /*
     IfElse(IfElseStatement),
     Expression(ExpressionStatement),
@@ -27,11 +28,16 @@ pub struct ReturnStatement{
 }
 
 #[derive(Debug)]
+pub struct ExpressionStatement {
+    pub value: Expression,
+}
+
+#[derive(Debug)]
 pub enum Expression {
     Identifier(IdentifierExpression),
     Literal(LiteralExpression),
+    Prefix(Box<PrefixExpression>),
     /*
-    Prefix(PrefixExpression),
     Infix(InfixExpression),
     Call(CallExpression),
     If(IfExpression),
@@ -46,5 +52,11 @@ pub struct IdentifierExpression{
 #[derive(Debug)]
 pub enum LiteralExpression{
     Integer(i64),
-    Bool(i64),
+    Bool(bool),
+}
+
+#[derive(Debug)]
+pub enum PrefixExpression{
+    Inverse(Expression),
+    Negation(Expression),
 }

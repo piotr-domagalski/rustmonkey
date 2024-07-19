@@ -44,7 +44,7 @@ where I: Iterator<Item = Token>
             None => Err("EOF"),
             Some(Token::Let) => self.parse_let_statement(),
             Some(Token::Return) => self.parse_return_statement(),
-            _ => Err("unimplemented statement type"),
+            Some(_) => self.parse_expression_statement(),
         }
     }
 
@@ -61,9 +61,19 @@ where I: Iterator<Item = Token>
             Some(Token::Assign) => (),
             _ => return Err("assignment operator expected"),
         };
+
+        /*
         let expression = match self.parse_expression() {
             Ok(expr) => expr,
             _ => return Err("failed to parse expression"),
+        };
+        */
+        while self.tokens.next_if(|tok| *tok != Token::Semicolon).is_some() {}
+        let expression = Expression::Identifier(crate::ast::IdentifierExpression{value: String::from("haha fooled ya")});
+
+        match self.tokens.next() {
+            Some(Token::Semicolon) => (),
+            _ => return Err("semicolon expected"),
         };
 
         Ok(
@@ -80,9 +90,18 @@ where I: Iterator<Item = Token>
             Some(Token::Return) => (),
             _ => return Err("return keyword expected"),
         };
+        /*
         let expression = match self.parse_expression() {
             Ok(expr) => expr,
             _ => return Err("failed to parse expression"),
+        };
+        */
+        while self.tokens.next_if(|tok| *tok != Token::Semicolon).is_some() {}
+        let expression = Expression::Identifier(crate::ast::IdentifierExpression{value: String::from("haha fooled ya")});
+
+        match self.tokens.next() {
+            Some(Token::Semicolon) => (),
+            _ => return Err("semicolon expected"),
         };
 
         Ok(
@@ -94,11 +113,52 @@ where I: Iterator<Item = Token>
         )
     }
 
-    fn parse_expression(&mut self) -> Result<Expression, &'static str> {
-        while self.tokens.next_if(|tok| *tok != Token::Semicolon).is_some() {}
-        self.tokens.next();
-        Ok(Expression::Identifier(crate::ast::IdentifierExpression{value: String::from("haha fooled ya")}))
+    fn parse_expression_statement(&mut self) -> Result<Statement, &'static str> {
+        let expression = match self.parse_expression() {
+            Ok(expr) => expr,
+            _ => return Err("failed to parse expression")
+        };
+        self.tokens.next_if(|tok| *tok == Token::Semicolon);
+
+        Ok( Statement::Expression(
+                crate::ast::ExpressionStatement {
+                    value: expression
+                }
+            )
+        )
     }
+
+    fn parse_expression(&mut self) -> Result<Expression, &'static str> {
+        //prefix
+        let left_expression = match self.tokens.peek() {
+            Some(Token::Identifier(_)) => self.parse_identifier_expression(),
+            Some(Token::Integer(_)) => self.parse_integer_expression(),
+            _ => Err("unimplemented expression type")
+        };
+
+        //TEMP
+        self.tokens.next();
+
+        left_expression
+    }
+
+    fn parse_identifier_expression(&mut self) -> Result<Expression, &'static str> {
+        if let Some(Token::Identifier(ident)) = self.tokens.peek() {
+            Ok(Expression::Identifier(crate::ast::IdentifierExpression { value:  ident.clone()}))
+        } else {
+            Err("expected identifier token")
+        }
+    }
+
+    fn parse_integer_expression(&mut self) -> Result<Expression, &'static str> {
+        if let Some(Token::Integer(int)) = self.tokens.peek() {
+            Ok(Expression::Literal(crate::ast::LiteralExpression::Integer(*int)))
+        } else {
+            Err("epected integer literal token")
+        }
+
+    }
+
 }
 
 
@@ -202,6 +262,88 @@ mod tests {
             } else {
                 panic!("expected Statement::Return, got {:?}", statement);
             }
+        }
+    }
+
+    #[test]
+    fn test_identifier_expression() {
+        let input = [
+            Token::Identifier(String::from("foobar")),
+            Token::Semicolon,
+        ];
+
+        let parser = Parser::new(input.into_iter());
+
+        let output: Program = parser.parse_program().expect("hardcoded tokens shouldn't fail to parse");
+
+        assert_eq!(output.statements.len(), 1, "expected 1 statements, got {}", output.statements.len());
+
+        if let Statement::Expression(expression_statement) = &output.statements[0] {
+            if let Expression::Identifier(ident) = &expression_statement.value {
+                assert_eq!(ident.value, "foobar");
+            } else {
+                panic!("expected Expression::Identifier, got {:?}", expression_statement.value)
+
+            }
+
+        } else {
+            panic!("expected Statement::Expression, got {:?}", output.statements[0]);
+        }
+    }
+
+    #[test]
+    fn test_integer_expression() {
+        let input = [
+            Token::Integer(5),
+            Token::Semicolon,
+        ];
+
+        let parser = Parser::new(input.into_iter());
+
+        let output: Program = parser.parse_program().expect("hardcoded tokens shouldn't fail to parse");
+
+        assert_eq!(output.statements.len(), 1, "expected 1 statements, got {}", output.statements.len());
+
+        if let Statement::Expression(expression_statement) = &output.statements[0] {
+            if let Expression::Literal(crate::ast::LiteralExpression::Integer(int)) = &expression_statement.value {
+                assert_eq!(*int, 5);
+            } else {
+                panic!("expected Expression::Literal(Integer), got {:?}", expression_statement.value)
+
+            }
+
+        } else {
+            panic!("expected Statement::Expression, got {:?}", output.statements[0]);
+        }
+    }
+
+    #[test]
+    fn test_prefix_inverse() {
+        let input = [Token::Minus, Token::Integer(5), Token::Semicolon];
+
+        let parser = Parser::new(input.into_iter());
+
+        let output: Program = parser.parse_program().expect("hardcoded tokens shouldn't fail to parse");
+
+        assert_eq!(output.statements.len(), 1, "expected 1 statements, got {}", output.statements.len());
+    
+        if let Statement::Expression(expression_statement) = &output.statements[0] {
+            if let Expression::Prefix(boxed_expression) = expression_statement.value {
+                if let crate::ast::PrefixExpression::Inverse(expression) = *boxed_expression {
+                    if let Expression::Literal(crate::ast::LiteralExpression::Integer(int)) = &expression{
+                        assert_eq!(*int, 5);
+                    } else {
+                        panic!("expected Expression::Literal(Integer), got {:?}", expression);
+                    }
+                } else {
+                    panic!("idk anymore");
+                }
+            }
+            else {
+                panic!("expected Expression::Prefix::Inverse, got {:?}", expression_statement);
+            }
+        } else {
+            panic!("expected Statement::Expression, got {:?}", output.statements[0]);
         }
     }
 }
