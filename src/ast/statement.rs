@@ -5,7 +5,7 @@ use crate::ast::Expression;
 use crate::ast::IdentifierExpression;
 use std::iter::Peekable;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Statement {
     Let{ identifier: IdentifierExpression, expression: Expression},
     Return { expression: Expression},

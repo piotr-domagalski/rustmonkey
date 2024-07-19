@@ -10,7 +10,7 @@ pub enum PrefixOperator {
     Negation,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Expression {
     Identifier { identifier_expression: IdentifierExpression},
     Literal { literal: Literal},
@@ -54,7 +54,7 @@ impl Expression {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct IdentifierExpression{
     pub identifier: String,
 }
@@ -69,7 +69,7 @@ impl IdentifierExpression {
 
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Literal{
     Integer(i64),
     Bool(bool),

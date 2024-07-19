@@ -4,7 +4,7 @@ use crate::ast::TokenIter;
 use crate::ast::Statement;
 use std::iter::Peekable;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Program {
     pub statements: Vec<Statement>
 }
