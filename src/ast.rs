@@ -1,50 +1,12 @@
-#[derive(Debug)]
-pub struct Program {
-    pub statements: Vec<Statement>
-}
+use crate::token::Token;
 
-#[derive(Debug)]
-pub enum Statement {
-    Let(LetStatement),
-    Return(ReturnStatement),
-    /*
-    IfElse(IfElseStatement),
-    Expression(ExpressionStatement),
-    Empty,
-    None,
-    */
-}
+trait TokenIter: Iterator<Item = Token> {}
+impl<T: Iterator<Item = Token>> TokenIter for T {}
 
-#[derive(Debug)]
-pub struct LetStatement {
-    pub identifier: IdentifierExpression,
-    pub value: Expression,
-}
+mod program;
+mod statement;
+mod expression;
 
-#[derive(Debug)]
-pub struct ReturnStatement{
-    pub value: Expression,
-}
-
-#[derive(Debug)]
-pub enum Expression {
-    Identifier(IdentifierExpression),
-    Literal(LiteralExpression),
-    /*
-    Prefix(PrefixExpression),
-    Infix(InfixExpression),
-    Call(CallExpression),
-    If(IfExpression),
-    */
-}
-
-#[derive(Debug)]
-pub struct IdentifierExpression{
-    pub value: String,
-}
-
-#[derive(Debug)]
-pub enum LiteralExpression{
-    Integer(i64),
-    Bool(i64),
-}
+pub use program::*;
+pub use statement::*;
+pub use expression::*;
