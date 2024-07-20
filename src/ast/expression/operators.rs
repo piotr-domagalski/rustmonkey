@@ -35,6 +35,21 @@ impl InfixOperator {
                 Precedence::Product,
         }
     }
+    pub fn parse(token: &crate::token::Token) -> Result<InfixOperator, &'static str>{
+        use InfixOperator::*;
+        use crate::token::Token;
+        match token {
+            Token::Plus => Ok(Add),
+            Token::Minus => Ok(Sub),
+            Token::Asterisk => Ok(Mul),
+            Token::Slash => Ok(Div),
+            Token::LessThan => Ok(LessThan),
+            Token::GreaterThan => Ok(GreaterThan),
+            Token::Equals => Ok(Equals),
+            Token::NotEquals => Ok(NotEquals),
+            _ => Err("invalid operator"),
+        }
+    }
 } 
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]

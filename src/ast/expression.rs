@@ -41,17 +41,36 @@ impl Expression {
 
 //parsing
 impl Expression {
-    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Expression, &'static str>
-    {
-        let left_expression = match iter.peek() {
-            Some(Token::Identifier(_)) => Ok(Expression::Identifier {identifier_expression: IdentifierExpression::parse(iter)? }),
-            Some(Token::Integer(_)) => Ok(Expression::Literal {literal: Literal::parse(iter)? }),
-            Some(Token::Bang) | Some(Token::Minus) => Expression::parse_prefix_expression(iter),
+    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Expression, &'static str> {
+        Self::parse_with_precedence(iter, Precedence::Lowest)
+    }
+
+    pub fn parse_with_precedence<I: TokenIter>(iter: &mut Peekable<I>, precedence: Precedence) -> Result<Expression, &'static str> {
+        let mut left = match iter.peek() {
+            Some(Token::Identifier(_)) => Expression::Identifier {identifier_expression: IdentifierExpression::parse(iter)? },
+            Some(Token::Integer(_)) => Expression::Literal {literal: Literal::parse(iter)? },
+            Some(Token::Bang) | Some(Token::Minus) => Expression::parse_prefix_expression(iter)?,
             _ => return Err("unimplemented expression type")
         };
 
-        //TEMP
-        left_expression
+        loop {
+            let next_precedence = match iter.peek() {
+                Some(Token::Semicolon) => return Ok(left),
+                None => return Err("unexpected EOF"),
+                Some(token) => {
+                    match InfixOperator::parse(token) {
+                        Ok(op) => op.precedence(),
+                        Err(_) => Precedence::Lowest,
+                    }
+                }
+            };
+            if precedence >= next_precedence {
+                return Ok(left);
+            }
+
+            left = Self::parse_infix_expression(iter, left)?;
+        }
+        Ok(left)
     }
 
     fn parse_prefix_expression<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Expression, &'static str> {
@@ -67,6 +86,17 @@ impl Expression {
             _ => return Err("Expected ! or - operator"),
         };
         Ok(Expression::Prefix { operator: operator, expression: Box::new(Expression::parse(iter)?)})
+    }
+
+    fn parse_infix_expression<I: TokenIter>(iter: &mut Peekable<I>, left: Expression) -> Result<Expression, &'static str> {
+        if let Some(token) = iter.next() {
+            let operator = InfixOperator::parse(&token)?;  
+            let right = Self::parse_with_precedence(iter, operator.precedence())?;
+
+            Ok(Expression::Infix{operator, left: Box::new(left), right: Box::new(right)})
+        } else {
+            Err("expected operator token")
+        } 
     }
 }
 
