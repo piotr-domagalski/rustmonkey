@@ -7,6 +7,15 @@ impl PrefixOperator {
     pub fn precedence(&self) -> Precedence {
         Precedence::Prefix
     }
+    pub fn parse(token: &crate::token::Token) -> Result<PrefixOperator, &'static str> {
+        use PrefixOperator::*;
+        use crate::token::Token;
+        match token {
+            Token::Minus => Ok(Inverse),
+            Token::Bang => Ok(Negation),
+            _ => Err("Expected ! or - operator"),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]

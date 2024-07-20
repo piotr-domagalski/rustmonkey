@@ -74,18 +74,12 @@ impl Expression {
     }
 
     fn parse_prefix_expression<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Expression, &'static str> {
-        let operator = match iter.peek() {
-            Some(Token::Minus) => {
-                iter.next();
-                PrefixOperator::Inverse
-            },
-            Some(Token::Bang) => {
-                iter.next();
-                PrefixOperator::Negation
-            },
-            _ => return Err("Expected ! or - operator"),
+        let operator = match iter.next() {
+            Some(token) => PrefixOperator::parse(&token)?,
+            None => return Err("unexpected EOF"),
         };
-        Ok(Expression::Prefix { operator: operator, expression: Box::new(Expression::parse(iter)?)})
+
+        Ok(Expression::new_prefix(operator, Expression::parse(iter)?))
     }
 
     fn parse_infix_expression<I: TokenIter>(iter: &mut Peekable<I>, left: Expression) -> Result<Expression, &'static str> {
