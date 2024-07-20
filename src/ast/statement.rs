@@ -118,8 +118,7 @@ mod tests {
     fn test_let_statements() {
         struct Input {
             tokens: [Token; 5],
-            identifier: &'static str,
-            value: i64,
+            expected: Statement,
         }
         let inputs = [
             Input {
@@ -130,8 +129,7 @@ mod tests {
                     Token::Integer(5),
                     Token::Semicolon,
                 ],
-                identifier: "x",
-                value: 5,
+                expected: Statement::new_let("x", Expression::new_int(5)),
             },
 
             Input {
@@ -142,8 +140,7 @@ mod tests {
                     Token::Integer(10),
                     Token::Semicolon,
                 ],
-                identifier: "y",
-                value: 10,
+                expected: Statement::new_let("y", Expression::new_int(10)),
             },
 
             Input {
@@ -154,25 +151,16 @@ mod tests {
                     Token::Integer(838383),
                     Token::Semicolon,
                 ],
-                identifier: "foobar",
-                value: 838383,
+                expected: Statement::new_let("foobar", Expression::new_int(838383))
             },
         ];
 
         for input in inputs {
-            let parsed = Statement::parse(&mut input.tokens.into_iter().peekable());
-            if let Ok(Statement::Let{identifier: ident_expr, expression: expr}) = parsed {
-                assert_eq!(ident_expr.identifier, input.identifier);
+            let mut iterator = input.tokens.into_iter().peekable();
+            let parsed = Statement::parse(&mut iterator).expect("Hardcoded tokens shouldn't fail to parse");
 
-                if let Expression::Literal{literal: crate::ast::Literal::Integer(int)} = expr{
-                    assert_eq!(int, input.value);
-                } else {
-                    panic!("Expected integer literal expression, got {:?}", expr);
-                }
-            }
-            else {
-                panic!("Expected let statement, got {:?}", parsed)
-            }
+            assert_eq!(iterator.next(), None);
+            assert_eq!(parsed, input.expected);
         }
     }
 
@@ -180,7 +168,7 @@ mod tests {
     fn test_return_statements() {
         struct Input {
             tokens: [Token; 3],
-            value: i64,
+            expected: Statement,
         }
         let inputs = [
             Input {
@@ -189,7 +177,7 @@ mod tests {
                     Token::Integer(5),
                     Token::Semicolon,
                 ],
-                value: 5,
+                expected: Statement::new_return(Expression::new_int(5)),
             },
 
             Input {
@@ -198,7 +186,7 @@ mod tests {
                     Token::Integer(10),
                     Token::Semicolon,
                 ],
-                value: 10,
+                expected: Statement::new_return(Expression::new_int(10)),
             },
 
             Input {
@@ -207,22 +195,16 @@ mod tests {
                     Token::Integer(993322),
                     Token::Semicolon,
                 ],
-                value: 993322,
+                expected: Statement::new_return(Expression::new_int(993322)),
             }
         ];
 
         for input in inputs {
-            let parsed = Statement::parse(&mut input.tokens.into_iter().peekable());
-            if let Ok(Statement::Return{expression: expr}) = parsed {
-                if let Expression::Literal{literal: crate::ast::Literal::Integer(int)} = expr{
-                    assert_eq!(int, input.value);
-                } else {
-                    panic!("Expected integer literal expression, got {:?}", expr);
-                }
-            }
-            else {
-                panic!("Expected let statement, got {:?}", parsed)
-            }
+            let mut iterator = input.tokens.into_iter().peekable();
+            let parsed = Statement::parse(&mut iterator).expect("Hardcoded tokens shouldn't fail to parse");
+
+            assert_eq!(iterator.next(), None);
+            assert_eq!(parsed, input.expected);
         }
     }
 }

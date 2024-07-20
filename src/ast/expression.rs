@@ -50,8 +50,6 @@ impl Expression {
         };
 
         //TEMP
-        iter.next();
-
         left_expression
     }
 
@@ -84,13 +82,15 @@ impl IdentifierExpression {
 
 impl IdentifierExpression {
     fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<IdentifierExpression, &'static str> {
-        if let Some(Token::Identifier(ident)) = iter.peek() {
-            Ok(IdentifierExpression { identifier: ident.clone() })
-        } else {
-            Err("expected identifier token")
+        match iter.peek() {
+            Some(Token::Identifier(ident)) => {
+                let ident = ident.clone();
+                iter.next();
+                Ok(IdentifierExpression { identifier: ident })
+            },
+            _ => Err("expected identifier token"),
         }
     }
-
 }
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
@@ -109,10 +109,16 @@ impl Literal {
 impl Literal {
     fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Literal, &'static str> {
         match iter.peek() {
-            Some(Token::Integer(i)) => 
-                Ok(Literal::Integer(*i)),
-            Some(Token::Bool(b)) =>
-                Ok(Literal::Bool(*b)),
+            Some(Token::Integer(i)) => {
+                let i = *i;
+                iter.next();
+                Ok(Literal::Integer(i))
+            },
+            Some(Token::Bool(b)) => {
+                let b = *b;
+                iter.next();
+                Ok(Literal::Bool(b))
+            }
             _ => 
                 Err("expected integer literal token"),
         }
@@ -129,14 +135,13 @@ mod tests {
             Token::Identifier(String::from("foobar")),
             Token::Semicolon,
         ];
+        let expected = Expression::new_ident("foobar");
 
-        let output = Expression::parse(&mut input.into_iter().peekable()).expect("hardcoded tokens shouldn't fail to parse");
+        let mut iterator = input.into_iter().peekable();
+        let parsed = Expression::parse(&mut iterator).expect("Hardcoded tokens shouldn't fail to parse");
 
-        if let Expression::Identifier{identifier_expression: IdentifierExpression{identifier}} = output {
-            assert_eq!(identifier, "foobar");
-        } else {
-            panic!("expected Expression::Identifier, got {:?}", output);
-        }
+        assert_eq!(iterator.next(), Some(Token::Semicolon));
+        assert_eq!(parsed, expected);
     }
 
     #[test]
@@ -145,53 +150,38 @@ mod tests {
             Token::Integer(5),
             Token::Semicolon,
         ];
+        let expected = Expression::new_int(5);
 
-        let output = Expression::parse(&mut input.into_iter().peekable()).expect("hardcoded tokens shouldn't fail to parse");
+        let mut iterator = input.into_iter().peekable();
+        let parsed = Expression::parse(&mut iterator).expect("Hardcoded tokens shouldn't fail to parse");
 
-        if let Expression::Literal{literal} = output {
-            if let Literal::Integer(int) = literal {
-                assert_eq!(int, 5);
-            } else {
-                panic!("expected integer literal, got {:?}", literal)
-            }
-        } else {
-            panic!("expected Expression::Literal, got {:?}", output);
-        }
+        assert_eq!(iterator.next(), Some(Token::Semicolon));
+        assert_eq!(parsed, expected);
     }
 
     #[test]
     fn test_prefix_expressions() {
         struct Test {
             tokens: [Token; 3],
-            operator: PrefixOperator,
-            integer: i64,
+            expected: Expression
         };
         let tests = [
             Test {
                 tokens: [Token::Minus, Token::Integer(5), Token::Semicolon],
-                operator: PrefixOperator::Inverse,
-                integer: 5,
+                expected: Expression::new_prefix(PrefixOperator::Inverse, Expression::new_int(5)),
             },
             Test {
                 tokens: [Token::Bang, Token::Integer(15), Token::Semicolon],
-                operator: PrefixOperator::Negation,
-                integer: 15
+                expected: Expression::new_prefix(PrefixOperator::Negation, Expression::new_int(15)),
             },
         ];
 
         for test in tests {
-            let parsed = Expression::parse(&mut test.tokens.into_iter().peekable()).expect("Hardcoded tokens shouldn't fail to parse");
+            let mut iterator = test.tokens.clone().into_iter().peekable();
+            let parsed = Expression::parse(&mut iterator).expect("Hardcoded tokens shouldn't fail to parse");
 
-            if let Expression::Prefix{operator, expression} = parsed {
-                assert_eq!(operator, test.operator);
-                if let Expression::Literal{literal: Literal::Integer(int)} = *expression {
-                    assert_eq!(int, test.integer);
-                } else {
-                    panic!("expected Expression::Literal(Literal::Integer), got, {:?}", expression)
-                }
-            } else {
-                panic!("expected Expression::Prefix, got {:?}", parsed);
-            }
+            assert_eq!(iterator.next(), Some(Token::Semicolon), "input: {:?}, parsed: {:?}", test.tokens, parsed);
+            assert_eq!(parsed, test.expected);
         }
     }
 }

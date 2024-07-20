@@ -46,12 +46,14 @@ mod tests {
     use crate::lexer::Lexer;
 
     #[test]
-    fn test_parser_new() {
+    fn test_token_iter_trait() {
         let tokens = vec![Token::Let, Token::Identifier(String::from("x")), Token::Assign, Token::Integer(5), Token::Semicolon];
-        let _parser_from_vec = Program::parse(&mut tokens.into_iter().peekable());
+        let parsed_from_tokens = Program::parse(&mut tokens.into_iter().peekable());
         
         let code = "let x = 5;";
         let lexer = Lexer::new(code);
-        let _parser_from_lexer = Program::parse(&mut lexer.peekable());
+        let parsed_from_lexer = Program::parse(&mut lexer.peekable());
+
+        assert_eq!(parsed_from_tokens, parsed_from_lexer);
     }
 }
