@@ -1,3 +1,5 @@
+use std::fmt::{Formatter, Display};
+
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum PrefixOperator {
     Inverse,
@@ -14,6 +16,16 @@ impl PrefixOperator {
             Token::Minus => Ok(Inverse),
             Token::Bang => Ok(Negation),
             _ => Err("Expected ! or - operator"),
+        }
+    }
+}
+
+impl Display for PrefixOperator {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        use PrefixOperator::*;
+        match &self {
+            Inverse => write!(f, "-"),
+            Negation => write!(f, "!"),
         }
     }
 }
@@ -60,7 +72,22 @@ impl InfixOperator {
         }
     }
 } 
-
+impl Display for InfixOperator {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        use InfixOperator::*;
+        let symbol = match &self {
+            Add => "+",
+            Sub => "-",
+            Mul => "*",
+            Div => "/",
+            LessThan => "<",
+            GreaterThan => ">",
+            Equals => "==",
+            NotEquals => "!=",
+        };
+        write!(f, "{}", symbol)
+    }
+}
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
 pub enum Precedence{
     Lowest,

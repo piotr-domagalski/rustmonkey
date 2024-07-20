@@ -3,6 +3,7 @@
 use crate::token::Token;
 use crate::ast::TokenIter;
 use std::iter::Peekable;
+use std::fmt::{Formatter, Display};
 
 mod operators;
 pub use operators::*;
@@ -93,7 +94,20 @@ impl Expression {
         } 
     }
 }
-
+impl Display for Expression {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match &self {
+            Expression::Identifier{identifier_expression} =>
+                write!(f, "{}", identifier_expression),
+            Expression::Literal{literal} => 
+                write!(f, "{}", literal),
+            Expression::Prefix{operator, expression} => 
+                write!(f, "({}{})", operator, expression),
+            Expression::Infix{operator, left, right} =>
+                write!(f, "({} {} {})", left, operator, right),
+        }
+    }
+}
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct IdentifierExpression{
     pub identifier: String,
@@ -118,11 +132,18 @@ impl IdentifierExpression {
     }
 }
 
+impl Display for IdentifierExpression {
+    fn fmt (&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.identifier)
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum Literal{
     Integer(i64),
     Bool(bool),
 }
+
 impl Literal {
     pub fn new_int(integer: i64) -> Literal {
         Literal::Integer(integer)
@@ -131,6 +152,7 @@ impl Literal {
         Literal::Bool(boolean)
     }
 }
+
 impl Literal {
     fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Literal, &'static str> {
         match iter.peek() {
@@ -146,6 +168,15 @@ impl Literal {
             }
             _ => 
                 Err("expected integer literal token"),
+        }
+    }
+}
+
+impl Display for Literal {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match &self {
+            Literal::Integer(int) => write!(f, "{}", int),
+            Literal::Bool(boolean) => write!(f, "{}", boolean),
         }
     }
 }
@@ -262,6 +293,86 @@ mod tests {
             assert_eq!(parsed, expected);
             assert_eq!(iterator.next(), Some(Token::Semicolon));
         }
+    }
+    #[test]
+    fn test_complex_expressions() {
+        struct Test {
+            input: &'static str,
+            expected: &'static str,
+        }
+        let tests = [
+            Test {
+                input: "-a;",
+                expected: "(-a)",
+            },
+            Test {
+                input: "-a - b;",
+                expected: "((-a) - b)",
+            },
+            Test {
+                input: "-a * b;",
+                expected: "((-a) * b)",
+            },
+            Test {
+                input: "!-a;",
+                expected: "(!(-a))",
+            },
+            Test {
+                input: "a + b + c;",
+                expected: "((a + b) + c)",
+            },
+            Test {
+                input: "a + b - c;",
+                expected: "((a + b) - c)",
+            },
+            Test {
+                input: "a * b * c;",
+                expected: "((a * b) * c)",
+            },
+            Test {
+                input: "a * b / c;",
+                expected: "((a * b) / c)",
+            },
+            Test {
+                input: "a + b / c;",
+                expected: "(a + (b / c))",
+            },
+            Test {
+                input: "a + b * c + d / e - f;",
+                expected: "(((a + (b * c)) + (d / e)) - f)",
+            },
+            /*
+            Test {
+                input: "3 + 4; -5 * 5;",
+                expected: "(3 + 4)((-5) * 5)",
+            },
+            */
+            Test {
+                input: "5 > 4 == 3 < 4;",
+                expected: "((5 > 4) == (3 < 4))",
+            },
+            Test {
+                input: "5 < 4 != 3 > 4;",
+                expected: "((5 < 4) != (3 > 4))",
+            },
+            Test {
+                input: "3 + 4 * 5 == 3 * 1 + 4 * 5;",
+                expected: "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+            },
+            Test {
+                input: "3 + 4 * 5 == 3 * 1 + 4 * 5;",
+                expected: "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+            },
+        ];
 
+        for test in tests {
+            let lexer = crate::lexer::Lexer::new(test.input);
+            let parsed = Expression::parse(&mut lexer.peekable());
+            assert!(parsed.is_ok(), "failed to parse \'{}\': {:?}", test.input, parsed);
+            let parsed = parsed.expect("if not ok, assert above panics");
+            let formatted = parsed.to_string();
+
+            assert_eq!(formatted, test.expected, "\ninput: \"{}\" \nparsed: {:#?}", test.input, parsed);
+        }
     }
 }
