@@ -4,24 +4,22 @@ use crate::token::Token;
 use crate::ast::TokenIter;
 use std::iter::Peekable;
 
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
-pub enum PrefixOperator {
-    Inverse,
-    Negation,
-}
+mod operators;
+pub use operators::*;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Expression {
     Identifier { identifier_expression: IdentifierExpression},
     Literal { literal: Literal},
     Prefix { operator: PrefixOperator, expression: Box<Expression> },
+    Infix { operator: InfixOperator, left: Box<Expression>, right: Box<Expression> },
     /*
-    Prefix(PrefixExpression),
     Infix(InfixExpression),
     Call(CallExpression),
     If(IfExpression),
     */
 }
+
 //builders
 impl Expression {
     pub fn new_ident(identifier: &str) -> Expression{
@@ -36,8 +34,11 @@ impl Expression {
     pub fn new_prefix(operator: PrefixOperator, expression: Expression) -> Expression {
         Expression::Prefix { operator, expression: Box::new(expression) }
     }
-    //TODO new_infix
+    pub fn new_infix(operator: InfixOperator, left: Expression, right: Expression) -> Expression {
+        Expression::Infix { operator, left: Box::new(left), right: Box::new(right)}
+    }
 }
+
 //parsing
 impl Expression {
     pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Expression, &'static str>
@@ -183,5 +184,60 @@ mod tests {
             assert_eq!(iterator.next(), Some(Token::Semicolon), "input: {:?}, parsed: {:?}", test.tokens, parsed);
             assert_eq!(parsed, test.expected);
         }
+    }
+
+    #[test]
+    fn test_infix_expressions() {
+        struct Test {
+            token: Token,
+            expected: InfixOperator,
+        }
+
+        let tests = [
+            Test {
+                token: Token::Plus,
+                expected: InfixOperator::Add, 
+            },
+            Test {
+                token: Token::Minus,
+                expected: InfixOperator::Sub,
+            },
+            Test {
+                token: Token::Asterisk,
+                expected: InfixOperator::Mul,
+            },
+            Test {
+                token: Token::Slash,
+                expected: InfixOperator::Div,
+            },
+            Test {
+                token: Token::LessThan,
+                expected: InfixOperator::LessThan,
+            },
+            Test {
+                token: Token::GreaterThan,
+                expected: InfixOperator::GreaterThan,
+            },
+            Test {
+                token: Token::Equals,
+                expected: InfixOperator::Equals,
+            },
+            Test {
+                token: Token::NotEquals,
+                expected: InfixOperator::NotEquals,
+            },
+        ];
+
+        for test in tests {
+            let tokens = [Token::Integer(5), test.token, Token::Integer(5), Token::Semicolon];
+            let expected = Expression::new_infix(test.expected, Expression::new_int(5), Expression::new_int(5));
+
+            let mut iterator = tokens.into_iter().peekable();
+            let parsed = Expression::parse(&mut iterator).expect("Hardcoded tokens shouldn't fail to parse");
+
+            assert_eq!(parsed, expected);
+            assert_eq!(iterator.next(), Some(Token::Semicolon));
+        }
+
     }
 }
