@@ -80,7 +80,7 @@ impl Expression {
             None => return Err("unexpected EOF"),
         };
 
-        Ok(Expression::new_prefix(operator, Expression::parse(iter)?))
+        Ok(Expression::new_prefix(operator, Expression::parse_with_precedence(iter, Precedence::Prefix)?))
     }
 
     fn parse_infix_expression<I: TokenIter>(iter: &mut Peekable<I>, left: Expression) -> Result<Expression, &'static str> {
