@@ -56,8 +56,7 @@ impl Expression {
 
         loop {
             let next_precedence = match iter.peek() {
-                Some(Token::Semicolon) => return Ok(left),
-                None => return Err("unexpected EOF"),
+                Some(Token::Semicolon) | None => return Ok(left),
                 Some(token) => {
                     match InfixOperator::parse(token) {
                         Ok(op) => op.precedence(),
@@ -302,65 +301,65 @@ mod tests {
         }
         let tests = [
             Test {
-                input: "-a;",
+                input: "-a",
                 expected: "(-a)",
             },
             Test {
-                input: "-a - b;",
+                input: "-a - b",
                 expected: "((-a) - b)",
             },
             Test {
-                input: "-a * b;",
+                input: "-a * b",
                 expected: "((-a) * b)",
             },
             Test {
-                input: "!-a;",
+                input: "!-a",
                 expected: "(!(-a))",
             },
             Test {
-                input: "a + b + c;",
+                input: "a + b + c",
                 expected: "((a + b) + c)",
             },
             Test {
-                input: "a + b - c;",
+                input: "a + b - c",
                 expected: "((a + b) - c)",
             },
             Test {
-                input: "a * b * c;",
+                input: "a * b * c",
                 expected: "((a * b) * c)",
             },
             Test {
-                input: "a * b / c;",
+                input: "a * b / c",
                 expected: "((a * b) / c)",
             },
             Test {
-                input: "a + b / c;",
+                input: "a + b / c",
                 expected: "(a + (b / c))",
             },
             Test {
-                input: "a + b * c + d / e - f;",
+                input: "a + b * c + d / e - f",
                 expected: "(((a + (b * c)) + (d / e)) - f)",
             },
             /*
             Test {
-                input: "3 + 4; -5 * 5;",
+                input: "3 + 4; -5 * 5",
                 expected: "(3 + 4)((-5) * 5)",
             },
             */
             Test {
-                input: "5 > 4 == 3 < 4;",
+                input: "5 > 4 == 3 < 4",
                 expected: "((5 > 4) == (3 < 4))",
             },
             Test {
-                input: "5 < 4 != 3 > 4;",
+                input: "5 < 4 != 3 > 4",
                 expected: "((5 < 4) != (3 > 4))",
             },
             Test {
-                input: "3 + 4 * 5 == 3 * 1 + 4 * 5;",
+                input: "3 + 4 * 5 == 3 * 1 + 4 * 5",
                 expected: "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
             },
             Test {
-                input: "3 + 4 * 5 == 3 * 1 + 4 * 5;",
+                input: "3 + 4 * 5 == 3 * 1 + 4 * 5",
                 expected: "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
             },
         ];
