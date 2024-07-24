@@ -18,10 +18,10 @@ pub enum Statement {
 }
 //builders
 impl Statement {
-    pub fn new_let(identifier: &str, expression: Expression) -> Statement{
+    pub fn new_let(identifier: IdentifierExpression, expression: Expression) -> Statement{
         Statement::Let{
-            identifier: IdentifierExpression::new(identifier),
-            expression
+            identifier,
+            expression,
         }
     }
     pub fn new_return(expression: Expression) -> Statement {
@@ -52,15 +52,12 @@ impl Statement {
     // let <identifier> = <expression> ;
     fn parse_let_statement<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Statement, &'static str> {
         if iter.next_if_eq(&Token::Let).is_none() { return Err("let keyword expected"); };
-        let identifier = match iter.next() {
-            Some(Token::Identifier(ident)) => ident,
-            _ => return Err("identifier expected"),
-        };
+        let identifier = IdentifierExpression::parse(iter)?;
         if iter.next_if_eq(&Token::Assign).is_none() { return Err("assignment operator expected"); };
         let expression = Expression::parse(iter)?;
         if iter.next_if_eq(&Token::Semicolon).is_none() { return Err("semicolon expected")};
     
-        Ok(Statement::new_let(&identifier, expression))
+        Ok(Statement::new_let(identifier, expression))
     }
 
     fn parse_return_statement<I: TokenIter> (iter: &mut Peekable<I>) -> Result<Statement, &'static str>
@@ -100,7 +97,7 @@ mod tests {
                     Token::Integer(5),
                     Token::Semicolon,
                 ],
-                expected: Statement::new_let("x", Expression::new_int(5)),
+                expected: Statement::new_let(IdentifierExpression::new("x"), Expression::new_int(5)),
             },
 
             Input {
@@ -111,7 +108,7 @@ mod tests {
                     Token::Integer(10),
                     Token::Semicolon,
                 ],
-                expected: Statement::new_let("y", Expression::new_int(10)),
+                expected: Statement::new_let(IdentifierExpression::new("y"), Expression::new_int(10)),
             },
 
             Input {
@@ -122,7 +119,7 @@ mod tests {
                     Token::Integer(838383),
                     Token::Semicolon,
                 ],
-                expected: Statement::new_let("foobar", Expression::new_int(838383))
+                expected: Statement::new_let(IdentifierExpression::new("foobar"), Expression::new_int(838383))
             },
         ];
 

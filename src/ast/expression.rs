@@ -119,7 +119,7 @@ impl IdentifierExpression {
 }
 
 impl IdentifierExpression {
-    fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<IdentifierExpression, &'static str> {
+    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<IdentifierExpression, &'static str> {
         match iter.peek() {
             Some(Token::Identifier(ident)) => {
                 let ident = ident.clone();
