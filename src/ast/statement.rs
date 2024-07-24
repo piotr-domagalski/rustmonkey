@@ -12,7 +12,6 @@ pub enum Statement {
     Expression {expression: Expression},
     /*
     IfElse(IfElseStatement),
-    Expression(ExpressionStatement),
     Empty,
     None,
     */
@@ -45,7 +44,8 @@ impl Statement {
             None => Err("EOF"),
             Some(Token::Let) => Self::parse_let_statement(iter),
             Some(Token::Return) => Self::parse_return_statement(iter),
-            _ => Err("unimplemented statement type"),
+            _ => Self::parse_expression_statement(iter),
+            // TODO: Should this be a wildcard? should there be an Err("unimplemented statement type")?
         }
     }
 
