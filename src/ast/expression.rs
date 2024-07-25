@@ -57,8 +57,8 @@ impl Expression {
         loop {
             let next_precedence = match iter.peek() {
                 Some(Token::Semicolon) | None => return Ok(left),
-                Some(token) => {
-                    match InfixOperator::parse(token) {
+                Some(_) => {
+                    match InfixOperator::parse(iter) {
                         Ok(op) => op.precedence(),
                         Err(_) => Precedence::Lowest,
                     }
@@ -80,14 +80,10 @@ impl Expression {
     }
 
     fn parse_infix_expression<I: TokenIter>(iter: &mut Peekable<I>, left: Expression) -> Result<Expression, &'static str> {
-        if let Some(token) = iter.next() {
-            let operator = InfixOperator::parse(&token)?;  
-            let right = Self::parse_with_precedence(iter, operator.precedence())?;
-
-            Ok(Expression::Infix{operator, left: Box::new(left), right: Box::new(right)})
-        } else {
-            Err("expected operator token")
-        } 
+        let operator = InfixOperator::parse(iter)?;  
+        iter.next(); // operator parsing doesn't consume the token - do it manually
+        let right = Self::parse_with_precedence(iter, operator.precedence())?;
+        Ok(Expression::Infix{operator, left: Box::new(left), right: Box::new(right)})
     }
 }
 impl Display for Expression {

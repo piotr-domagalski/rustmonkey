@@ -63,18 +63,18 @@ impl InfixOperator {
                 Precedence::Product,
         }
     }
-    pub fn parse(token: &crate::token::Token) -> Result<InfixOperator, &'static str>{
+    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<InfixOperator, &'static str>{
         use InfixOperator::*;
         use crate::token::Token;
-        match token {
-            Token::Plus => Ok(Add),
-            Token::Minus => Ok(Sub),
-            Token::Asterisk => Ok(Mul),
-            Token::Slash => Ok(Div),
-            Token::LessThan => Ok(LessThan),
-            Token::GreaterThan => Ok(GreaterThan),
-            Token::Equals => Ok(Equals),
-            Token::NotEquals => Ok(NotEquals),
+        match iter.peek() {
+            Some(Token::Plus) => Ok(Add),
+            Some(Token::Minus) => Ok(Sub),
+            Some(Token::Asterisk) => Ok(Mul),
+            Some(Token::Slash) => Ok(Div),
+            Some(Token::LessThan) => Ok(LessThan),
+            Some(Token::GreaterThan) => Ok(GreaterThan),
+            Some(Token::Equals) => Ok(Equals),
+            Some(Token::NotEquals) => Ok(NotEquals),
             _ => Err("invalid operator"),
         }
     }
