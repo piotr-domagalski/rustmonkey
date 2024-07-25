@@ -1,4 +1,11 @@
-use std::fmt::{Formatter, Display};
+use std::{
+    fmt::{Formatter, Display},
+    iter::Peekable,
+};
+use crate::{
+    token::Token,
+    ast::TokenIter,
+};
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum PrefixOperator {
@@ -9,12 +16,12 @@ impl PrefixOperator {
     pub fn precedence(&self) -> Precedence {
         Precedence::Prefix
     }
-    pub fn parse(token: &crate::token::Token) -> Result<PrefixOperator, &'static str> {
+    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<PrefixOperator, &'static str> {
         use PrefixOperator::*;
         use crate::token::Token;
-        match token {
-            Token::Minus => Ok(Inverse),
-            Token::Bang => Ok(Negation),
+        match iter.peek() {
+            Some(Token::Minus) => Ok(Inverse),
+            Some(Token::Bang) => Ok(Negation),
             _ => Err("Expected ! or - operator"),
         }
     }

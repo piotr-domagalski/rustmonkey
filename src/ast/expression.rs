@@ -74,11 +74,8 @@ impl Expression {
     }
 
     fn parse_prefix_expression<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Expression, &'static str> {
-        let operator = match iter.next() {
-            Some(token) => PrefixOperator::parse(&token)?,
-            None => return Err("unexpected EOF"),
-        };
-
+        let operator = PrefixOperator::parse(iter)?;
+        iter.next(); // operator parsing doesn't consume the token - do it manually
         Ok(Expression::new_prefix(operator, Expression::parse_with_precedence(iter, Precedence::Prefix)?))
     }
 
