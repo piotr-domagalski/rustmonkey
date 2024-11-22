@@ -3,8 +3,7 @@ use std::{
     iter::Peekable,
 };
 use crate::{
-    token::Token,
-    ast::TokenIter,
+    ast::{ParsingError, TokenIter}, token::Token
 };
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
@@ -16,13 +15,13 @@ impl PrefixOperator {
     pub fn precedence(&self) -> Precedence {
         Precedence::Prefix
     }
-    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<PrefixOperator, &'static str> {
+    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<PrefixOperator, ParsingError> {
         use PrefixOperator::*;
         use crate::token::Token;
         match iter.peek() {
             Some(Token::Minus) => Ok(Inverse),
             Some(Token::Bang) => Ok(Negation),
-            _ => Err("Expected ! or - operator"),
+            _ => Err(ParsingError::new_unexpected(iter.peek(), vec![Token::Bang, Token::Minus], "PrefixOperator")),
         }
     }
 }
@@ -63,7 +62,7 @@ impl InfixOperator {
                 Precedence::Product,
         }
     }
-    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<InfixOperator, &'static str>{
+    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<InfixOperator, ParsingError>{
         use InfixOperator::*;
         use crate::token::Token;
         match iter.peek() {
@@ -75,8 +74,12 @@ impl InfixOperator {
             Some(Token::GreaterThan) => Ok(GreaterThan),
             Some(Token::Equals) => Ok(Equals),
             Some(Token::NotEquals) => Ok(NotEquals),
-            _ => Err("invalid operator"),
-        }
+            _ => Err(ParsingError::new_unexpected(
+                iter.peek(), 
+                vec![Token::Plus, Token::Minus, Token::Asterisk, Token::Slash, Token::LessThan, Token::GreaterThan, Token::Equals, Token::NotEquals],
+                "InfixOperator"
+            )),
+}
     }
 } 
 impl Display for InfixOperator {
@@ -118,4 +121,95 @@ mod tests {
         assert!(Precedence::Product < Precedence::Prefix);
         assert!(Precedence::Prefix < Precedence::Call);
     } 
+            //TODO: write a macro to do these automatically
+
+    #[test]
+    fn test_infix_operator() {
+        struct Test{
+            input: Vec<Token>,
+            expected: Result<InfixOperator, ParsingError>,
+            iter_state: Option<Token>,
+        }
+        let tests = [
+            //every operator
+            //TODO: write a macro to do these automatically
+            Test {
+                input: vec![Token::Plus],
+                expected: Ok(InfixOperator::Add),
+                iter_state: Some(Token::Plus),
+            },
+
+            //wrong token
+            Test {
+                input: vec![Token::Bang],
+                expected: Err(ParsingError::new_unexpected(
+                    Some(Token::Bang).as_ref(),
+                    vec![Token::Plus, Token::Minus, Token::Asterisk, Token::Slash, 
+                        Token::LessThan, Token::GreaterThan, Token::Equals, Token::NotEquals],
+                    "InfixOperator")),
+                iter_state: Some(Token::Bang),
+            },
+
+            //no token
+            Test {
+                input: vec![],
+                expected: Err(ParsingError::new_unexpected(
+                    None,
+                    vec![Token::Plus, Token::Minus, Token::Asterisk, Token::Slash, 
+                        Token::LessThan, Token::GreaterThan, Token::Equals, Token::NotEquals],
+                    "InfixOperator")),
+                iter_state: None,
+            }
+        ];
+
+        for Test{input, expected, iter_state} in tests {
+            let mut iter = input.into_iter().peekable();
+            assert_eq!(InfixOperator::parse(&mut iter), expected);
+            assert_eq!(iter.peek(), iter_state.as_ref());
+        }
+    }
+
+    #[test]
+    fn test_prefix_operator() {
+        struct Test{
+            input: Vec<Token>,
+            expected: Result<PrefixOperator, ParsingError>,
+            iter_state: Option<Token>
+        }
+        let tests = [
+            Test {
+                input: vec![Token::Minus],
+                expected: Ok(PrefixOperator::Inverse),
+                iter_state: Some(Token::Minus)
+            },
+            Test {
+                input: vec![Token::Bang],
+                expected: Ok(PrefixOperator::Negation),
+                iter_state: Some(Token::Bang)
+            },
+            Test {
+                input: vec![Token::Identifier("foobaz".to_string())],
+                expected: Err(ParsingError::new_unexpected(
+                    Some(&Token::Identifier("foobaz".to_string())),
+                    vec![Token::Bang, Token::Minus],
+                    "PrefixOperator")),
+                iter_state: Some(Token::Identifier("foobaz".to_string())),
+            },
+            Test {
+
+                input: vec![],
+                expected: Err(ParsingError::new_unexpected(
+                    None,
+                    vec![Token::Bang, Token::Minus],
+                    "PrefixOperator")),
+                iter_state: None
+            }
+        ];
+
+        for Test{input, expected, iter_state} in tests {
+            let mut iter = input.into_iter().peekable();
+            assert_eq!(PrefixOperator::parse(&mut iter), expected);
+            assert_eq!(iter.peek(), iter_state.as_ref());
+        }
+    }
 }

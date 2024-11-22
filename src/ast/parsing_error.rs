@@ -1,5 +1,6 @@
 use crate::token::Token;
 
+#[derive(PartialEq, Eq, Debug)]
 pub enum ParsingError {
     UnexpectedToken {
         got: Option<Token>,
