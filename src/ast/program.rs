@@ -1,7 +1,6 @@
 #![allow(unused)]
 
-use crate::ast::TokenIter;
-use crate::ast::Statement;
+use crate::ast::{TokenIter, Statement, ParsingError};
 use std::iter::Peekable;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -17,7 +16,7 @@ impl Program {
     }
 }
 impl Program {
-    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Program, Vec<&'static str>> 
+    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Program, ParsingError> 
     {
         let mut statements: Vec<Statement> = vec![];
         let mut errors: Vec<&str> = vec![];
@@ -34,7 +33,7 @@ impl Program {
             Ok(Program {statements})
         }
         else {
-            Err(errors)
+            Err(errors.into())
         }
     }
 }

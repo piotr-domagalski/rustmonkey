@@ -11,7 +11,7 @@ pub enum ParsingError {
         errors: Vec<ParsingError>,
     },
     OtherError {
-        message: &'static str
+        message: String
     }
 }
 //builders
@@ -29,10 +29,26 @@ impl ParsingError {
     }
 
     pub fn new_other(message: &'static str) -> ParsingError {
-        ParsingError::OtherError { message }
+        ParsingError::OtherError { message: message.to_string() }
     }
 }
 
+//conversions
+impl From<&'static str> for ParsingError {
+    fn from(message: &'static str) -> Self {
+        ParsingError::new_other(message)
+    }
+
+}
+impl From<Vec<&'static str>> for ParsingError {
+    fn from(errors: Vec<&'static str>) -> Self {
+        let mut output: Vec<ParsingError> = vec![];
+        for error in errors {
+            output.push(error.into());
+        }
+        ParsingError::new_multiple(output)
+    }
+}
 impl From<ParsingError> for &str {
     fn from(value: ParsingError) -> Self {
         value.to_string().leak()
