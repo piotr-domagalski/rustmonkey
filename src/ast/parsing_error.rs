@@ -5,7 +5,7 @@ pub enum ParsingError {
     UnexpectedToken {
         got: Option<Token>,
         expected: Vec<Token>,
-        parsing_what: &'static str,
+        parsing_what: String,
     },
     MultipleErrors {
         errors: Vec<ParsingError>,
@@ -16,32 +16,32 @@ pub enum ParsingError {
 }
 //builders
 impl ParsingError {
-    pub fn new_unexpected(got: Option<&Token>, expected: Vec<Token>, parsing_what: &'static str) -> ParsingError {
+    pub fn new_unexpected(got: Option<&Token>, expected: Vec<Token>, parsing_what: &str) -> ParsingError {
         let got = match got {
             None => None,
             Some(tok) => Some(tok.clone())
         };
-        ParsingError::UnexpectedToken { got, expected, parsing_what}
+        ParsingError::UnexpectedToken { got, expected, parsing_what: parsing_what.to_string()}
     }
     pub fn new_multiple(errors: Vec<ParsingError>) -> ParsingError {
         ParsingError::MultipleErrors { errors }
 
     }
 
-    pub fn new_other(message: &'static str) -> ParsingError {
+    pub fn new_other(message: &str) -> ParsingError {
         ParsingError::OtherError { message: message.to_string() }
     }
 }
 
 //conversions
-impl From<&'static str> for ParsingError {
-    fn from(message: &'static str) -> Self {
+impl From<&str> for ParsingError {
+    fn from(message: &str) -> Self {
         ParsingError::new_other(message)
     }
 
 }
-impl From<Vec<&'static str>> for ParsingError {
-    fn from(errors: Vec<&'static str>) -> Self {
+impl From<Vec<&str>> for ParsingError {
+    fn from(errors: Vec<&str>) -> Self {
         let mut output: Vec<ParsingError> = vec![];
         for error in errors {
             output.push(error.into());
