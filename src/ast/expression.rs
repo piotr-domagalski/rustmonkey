@@ -2,6 +2,7 @@
 
 use crate::token::Token;
 use crate::ast::TokenIter;
+use crate::ast::ParsingError;
 use std::iter::Peekable;
 use std::fmt::{Formatter, Display};
 
@@ -112,14 +113,14 @@ impl IdentifierExpression {
 }
 
 impl IdentifierExpression {
-    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<IdentifierExpression, &'static str> {
+    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<IdentifierExpression, ParsingError> {
         match iter.peek() {
             Some(Token::Identifier(ident)) => {
                 let ident = ident.clone();
                 iter.next();
                 Ok(IdentifierExpression { identifier: ident })
             },
-            _ => Err("expected identifier token"),
+            _ => Err(ParsingError::new_unexpected(iter.peek(), vec![Token::Identifier("".to_string())], "identifier expression")),
         }
     }
 }
@@ -146,7 +147,7 @@ impl Literal {
 }
 
 impl Literal {
-    fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Literal, &'static str> {
+    fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Literal, ParsingError> {
         match iter.peek() {
             Some(Token::Integer(i)) => {
                 let i = *i;
@@ -159,7 +160,11 @@ impl Literal {
                 Ok(Literal::Bool(b))
             }
             _ => 
-                Err("expected integer literal token"),
+                Err(ParsingError::new_unexpected(
+                    iter.peek(),
+                    //TODO: Fix this once these tokens store Option<_>
+                    vec![Token::Integer(0), Token::Bool(true)],
+                    "literal expression")),
         }
     }
 }
