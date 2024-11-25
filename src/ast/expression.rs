@@ -43,16 +43,19 @@ impl Expression {
 
 //parsing
 impl Expression {
-    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Expression, &'static str> {
+    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Expression, ParsingError> {
         Self::parse_with_precedence(iter, Precedence::Lowest)
     }
 
-    pub fn parse_with_precedence<I: TokenIter>(iter: &mut Peekable<I>, precedence: Precedence) -> Result<Expression, &'static str> {
+    pub fn parse_with_precedence<I: TokenIter>(iter: &mut Peekable<I>, precedence: Precedence) -> Result<Expression, ParsingError> {
         let mut left = match iter.peek() {
             Some(Token::Identifier(_)) => Expression::Identifier {identifier_expression: IdentifierExpression::parse(iter)? },
             Some(Token::Integer(_)) => Expression::Literal {literal: Literal::parse(iter)? },
             Some(Token::Bang) | Some(Token::Minus) => Expression::parse_prefix_expression(iter)?,
-            _ => return Err("unimplemented expression type")
+            _ => return Err(ParsingError::new_unexpected(
+                            iter.peek(),
+                            vec![Token::Identifier("".to_string()), Token::Integer(0), Token::Bang, Token::Minus],
+                            "expression"))
         };
 
         loop {
@@ -74,13 +77,13 @@ impl Expression {
         Ok(left)
     }
 
-    fn parse_prefix_expression<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Expression, &'static str> {
+    fn parse_prefix_expression<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Expression, ParsingError> {
         let operator = PrefixOperator::parse(iter)?;
         iter.next(); // operator parsing doesn't consume the token - do it manually
         Ok(Expression::new_prefix(operator, Expression::parse_with_precedence(iter, Precedence::Prefix)?))
     }
 
-    fn parse_infix_expression<I: TokenIter>(iter: &mut Peekable<I>, left: Expression) -> Result<Expression, &'static str> {
+    fn parse_infix_expression<I: TokenIter>(iter: &mut Peekable<I>, left: Expression) -> Result<Expression, ParsingError> {
         let operator = InfixOperator::parse(iter)?;  
         iter.next(); // operator parsing doesn't consume the token - do it manually
         let right = Self::parse_with_precedence(iter, operator.precedence())?;
