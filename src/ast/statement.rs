@@ -3,6 +3,7 @@ use crate::token::Token;
 use crate::ast::TokenIter;
 use crate::ast::Expression;
 use crate::ast::IdentifierExpression;
+use crate::ast::ParsingError;
 use std::iter::Peekable;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -38,10 +39,10 @@ impl Statement {
 }
 //parsing
 impl Statement {
-    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Statement, &'static str>
+    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Statement, ParsingError>
     {
         match iter.peek() {
-            None => Err("EOF"),
+            None => Err(ParsingError::new_other("EOF")),
             Some(Token::Let) => Self::parse_let_statement(iter),
             Some(Token::Return) => Self::parse_return_statement(iter),
             _ => Self::parse_expression_statement(iter),
@@ -50,28 +51,30 @@ impl Statement {
     }
 
     // let <identifier> = <expression> ;
-    fn parse_let_statement<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Statement, &'static str> {
-        if iter.next_if_eq(&Token::Let).is_none() { return Err("let keyword expected"); };
+    fn parse_let_statement<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Statement, ParsingError> {
+        // TODO: those returns are really verbose. macro? helper fn?
+        if iter.next_if_eq(&Token::Let).is_none() { return Err(ParsingError::new_unexpected(iter.next().as_ref(), vec![Token::Let], "let statement")); }
         let identifier = IdentifierExpression::parse(iter)?;
-        if iter.next_if_eq(&Token::Assign).is_none() { return Err("assignment operator expected"); };
+        if iter.next_if_eq(&Token::Assign).is_none() { return Err(ParsingError::new_unexpected(iter.next().as_ref(), vec![Token::Assign], "let statement")); }
         let expression = Expression::parse(iter)?;
-        if iter.next_if_eq(&Token::Semicolon).is_none() { return Err("semicolon expected")};
+        if iter.next_if_eq(&Token::Semicolon).is_none() { return Err(ParsingError::new_unexpected(iter.next().as_ref(), vec![Token::Semicolon], "let statement")); }
     
         Ok(Statement::new_let(identifier, expression))
     }
 
-    fn parse_return_statement<I: TokenIter> (iter: &mut Peekable<I>) -> Result<Statement, &'static str>
+    // return <expression> ;
+    fn parse_return_statement<I: TokenIter> (iter: &mut Peekable<I>) -> Result<Statement, ParsingError>
     {
-        if iter.next_if_eq(&Token::Return).is_none() { return Err("return keyword expected"); };
+        if iter.next_if_eq(&Token::Return).is_none() { return Err(ParsingError::new_unexpected(iter.next().as_ref(), vec![Token::Return], "return statement")); }
         let expression = Expression::parse(iter)?;
-        if iter.next_if_eq(&Token::Semicolon).is_none() { return Err("semicolon expected")};
+        if iter.next_if_eq(&Token::Semicolon).is_none() { return Err(ParsingError::new_unexpected(iter.next().as_ref(), vec![Token::Semicolon], "return statement")); };
 
         Ok(Statement::new_return(expression))
     }
 
-    fn parse_expression_statement<I: TokenIter> (iter: &mut Peekable<I>) -> Result<Statement, &'static str> {
+    fn parse_expression_statement<I: TokenIter> (iter: &mut Peekable<I>) -> Result<Statement, ParsingError> {
         let expression = Expression::parse(iter)?;
-        iter.next_if(|tok| *tok == Token::Semicolon);
+        iter.next_if_eq(&Token::Semicolon);
 
         Ok(Statement::new_expr(expression))
     }

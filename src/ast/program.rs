@@ -19,12 +19,12 @@ impl Program {
     pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Program, ParsingError> 
     {
         let mut statements: Vec<Statement> = vec![];
-        let mut errors: Vec<&str> = vec![];
+        let mut errors: Vec<ParsingError> = vec![];
     
         loop {
             match Statement::parse(iter) {
                 Ok(statement) => statements.push(statement),
-                Err("EOF") => break,
+                Err(ParsingError::OtherError { message }) if message == "EOF" => break,
                 Err(error) => errors.push(error),
             }
         }
@@ -33,7 +33,7 @@ impl Program {
             Ok(Program {statements})
         }
         else {
-            Err(errors.into())
+            Err(ParsingError::new_multiple(errors))
         }
     }
 }
