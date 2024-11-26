@@ -380,6 +380,24 @@ mod tests {
                 input: "3 + 4 * 5 == 3 * 1 + 4 * 5",
                 expected: "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
             },
+
+            //boolean
+            Test {
+                input: "true",
+                expected: "true",
+            },
+            Test {
+                input: "false",
+                expected: "false",
+            },
+            Test {
+                input: "3 > 5 == false",
+                expected: "((3 > 5) == false)",
+            },
+            Test {
+                input: "3 < 5 == true",
+                expected: "((3 < 5) == true)",
+            },
         ];
 
         for test in tests {
