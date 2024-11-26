@@ -90,8 +90,11 @@ impl Display for ParsingError {
                 write!(f, "Unexpected token while parsing {parsing_what} - got: {got}, expected: {expected}")
             },
             Self::MultipleErrors { errors } => {
-                write!(f, "Multiple errors - len={}", errors.len())
-                // TODO: display all the errors, not just count
+                write!(f, "Multiple errors - len={}", errors.len())?;
+                for error in errors {
+                    write!(f, "\n{}", error)?;
+                }
+                Ok(())
             },
             Self::OtherError { message } => {
                 if message.len() == 0 {
@@ -206,14 +209,22 @@ mod tests {
                 input: ParsingError::new_multiple(vec![
                     ParsingError::new_unexpected(Some(&Token::Bang), vec![Token::Equals, Token::NotEquals], "test5"),
                 ]),
-                expected: format!("Multiple errors - len={}", 1),
+                expected: format!(r#"Multiple errors - len={}
+{}"#,
+                    1,
+                    ParsingError::new_unexpected(Some(&Token::Bang), vec![Token::Equals, Token::NotEquals], "test5")),
             },
             Test {
                 input: ParsingError::new_multiple(vec![
                     ParsingError::new_other("some other error in test6a"),
                     ParsingError::new_unexpected(Some(&Token::LeftCurly), vec![Token::RightCurly], "test6b"),
                 ]),
-                expected: format!("Multiple errors - len={}", 2),
+                expected: format!("Multiple errors - len={}
+{}
+{}",
+                    2,
+                    ParsingError::new_other("some other error in test6a"),
+                    ParsingError::new_unexpected(Some(&Token::LeftCurly), vec![Token::RightCurly], "test6b")),
             },
 
             //other
