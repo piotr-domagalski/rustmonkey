@@ -46,18 +46,16 @@ impl Statement {
             Some(Token::Let) => Self::parse_let_statement(iter),
             Some(Token::Return) => Self::parse_return_statement(iter),
             _ => Self::parse_expression_statement(iter),
-            // TODO: Should this be a wildcard? should there be an Err("unimplemented statement type")?
         }
     }
 
     // let <identifier> = <expression> ;
     fn parse_let_statement<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Statement, ParsingError> {
-        // TODO: those returns are really verbose. macro? helper fn?
-        if iter.next_if_eq(&Token::Let).is_none() { return Err(ParsingError::new_unexpected(iter.next().as_ref(), vec![Token::Let], "let statement")); }
+        if iter.next_if_eq(&Token::Let).is_none() { return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::Let], "let statement")); }
         let identifier = IdentifierExpression::parse(iter)?;
-        if iter.next_if_eq(&Token::Assign).is_none() { return Err(ParsingError::new_unexpected(iter.next().as_ref(), vec![Token::Assign], "let statement")); }
+        if iter.next_if_eq(&Token::Assign).is_none() { return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::Assign], "let statement")); }
         let expression = Expression::parse(iter)?;
-        if iter.next_if_eq(&Token::Semicolon).is_none() { return Err(ParsingError::new_unexpected(iter.next().as_ref(), vec![Token::Semicolon], "let statement")); }
+        if iter.next_if_eq(&Token::Semicolon).is_none() { return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::Semicolon], "let statement")); }
     
         Ok(Statement::new_let(identifier, expression))
     }
@@ -65,9 +63,9 @@ impl Statement {
     // return <expression> ;
     fn parse_return_statement<I: TokenIter> (iter: &mut Peekable<I>) -> Result<Statement, ParsingError>
     {
-        if iter.next_if_eq(&Token::Return).is_none() { return Err(ParsingError::new_unexpected(iter.next().as_ref(), vec![Token::Return], "return statement")); }
+        if iter.next_if_eq(&Token::Return).is_none() { return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::Return], "return statement")); }
         let expression = Expression::parse(iter)?;
-        if iter.next_if_eq(&Token::Semicolon).is_none() { return Err(ParsingError::new_unexpected(iter.next().as_ref(), vec![Token::Semicolon], "return statement")); };
+        if iter.next_if_eq(&Token::Semicolon).is_none() { return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::Semicolon], "return statement")); };
 
         Ok(Statement::new_return(expression))
     }
@@ -86,96 +84,207 @@ mod tests {
     use crate::token::Token;
 
     #[test]
-    fn test_let_statements() {
+    fn test_statements() {
         struct Input {
-            tokens: [Token; 5],
-            expected: Statement,
+            tokens: Vec<Token>,
+            expected: Result<Statement, ParsingError>,
+            next_tok: Option<Token>
         }
         let inputs = [
             Input {
-                tokens: [
+                tokens: vec![],
+                expected: Err(ParsingError::new_other("EOF")),
+                next_tok: None,
+            },
+
+            Input {
+                tokens: vec![
                     Token::Let,
                     Token::Identifier(String::from("x")),
                     Token::Assign,
                     Token::Integer(5),
                     Token::Semicolon,
                 ],
-                expected: Statement::new_let(IdentifierExpression::new("x"), Expression::new_int(5)),
+                expected: Ok(Statement::new_let(IdentifierExpression::new("x"), Expression::new_int(5))),
+                next_tok: None,
             },
 
             Input {
-                tokens: [
+                tokens: vec![
+                    Token::Return,
+                    Token::Integer(5),
+                    Token::Semicolon,
+                ],
+                expected: Ok(Statement::new_return(Expression::new_int(5))),
+                next_tok: None,
+            },
+        ];
+
+        for Input { tokens, expected, next_tok } in inputs {
+            let mut iterator = tokens.into_iter().peekable();
+            let parsed = Statement::parse(&mut iterator);
+
+            assert_eq!(parsed, expected);
+            assert_eq!(iterator.next(), next_tok);
+        }
+    }
+
+    #[test]
+    fn test_let_statements() {
+        struct Input {
+            tokens: Vec<Token>,
+            expected: Result<Statement, ParsingError>,
+            next_tok: Option<Token>,
+        }
+        let inputs = [
+            Input {
+                tokens: vec![
+                    Token::Let,
+                    Token::Identifier(String::from("x")),
+                    Token::Assign,
+                    Token::Integer(5),
+                    Token::Semicolon,
+                ],
+                expected: Ok(Statement::new_let(IdentifierExpression::new("x"), Expression::new_int(5))),
+                next_tok: None,
+            },
+
+            Input {
+                tokens: vec![
                     Token::Let,
                     Token::Identifier(String::from("y")),
                     Token::Assign,
                     Token::Integer(10),
                     Token::Semicolon,
                 ],
-                expected: Statement::new_let(IdentifierExpression::new("y"), Expression::new_int(10)),
+                expected: Ok(Statement::new_let(IdentifierExpression::new("y"), Expression::new_int(10))),
+                next_tok: None,
             },
 
             Input {
-                tokens: [
+                tokens: vec![
                     Token::Let,
                     Token::Identifier(String::from("foobar")),
                     Token::Assign,
                     Token::Integer(838383),
                     Token::Semicolon,
                 ],
-                expected: Statement::new_let(IdentifierExpression::new("foobar"), Expression::new_int(838383))
+                expected: Ok(Statement::new_let(IdentifierExpression::new("foobar"), Expression::new_int(838383))),
+                next_tok: None,
+            },
+
+            //missing let
+            Input {
+                tokens: vec![
+                    Token::Return,
+                    Token::Identifier(String::from("x")),
+                ],
+                expected: Err(ParsingError::new_unexpected(Some(&Token::Return), vec![Token::Let], "let statement")),
+                next_tok: Some(Token::Return),
+            },
+
+            //missing assign
+            Input {
+                tokens: vec![
+                    Token::Let,
+                    Token::Identifier(String::from("x")),
+                    Token::Bang,
+                    Token::Integer(838383),
+                    Token::Semicolon
+                ],
+                expected: Err(ParsingError::new_unexpected(Some(&Token::Bang), vec![Token::Assign], "let statement")),
+                next_tok: Some(Token::Bang),
+            },
+
+            //missing semicolon
+            Input {
+                tokens: vec![
+                    Token::Let,
+                    Token::Identifier(String::from("x")),
+                    Token::Assign,
+                    Token::Integer(838383),
+                    Token::Bang
+                ],
+                expected: Err(ParsingError::new_unexpected(Some(&Token::Bang), vec![Token::Semicolon], "let statement")),
+                next_tok: Some(Token::Bang),
             },
         ];
 
-        for input in inputs {
-            let mut iterator = input.tokens.into_iter().peekable();
-            let parsed = Statement::parse(&mut iterator).expect("Hardcoded tokens shouldn't fail to parse");
+        for Input {tokens, expected, next_tok} in inputs {
+            let mut iterator = tokens.into_iter().peekable();
+            let parsed = Statement::parse_let_statement(&mut iterator);
 
-            assert_eq!(iterator.next(), None);
-            assert_eq!(parsed, input.expected);
+            assert_eq!(parsed, expected);
+            assert_eq!(iterator.next(), next_tok);
         }
     }
 
     #[test]
     fn test_return_statements() {
         struct Input {
-            tokens: [Token; 3],
-            expected: Statement,
+            tokens: Vec<Token>,
+            expected: Result<Statement, ParsingError>,
+            next_tok: Option<Token>,
         }
         let inputs = [
             Input {
-                tokens: [
+                tokens: vec![
                     Token::Return,
                     Token::Integer(5),
                     Token::Semicolon,
                 ],
-                expected: Statement::new_return(Expression::new_int(5)),
+                expected: Ok(Statement::new_return(Expression::new_int(5))),
+                next_tok: None,
             },
 
             Input {
-                tokens: [
+                tokens: vec![
                     Token::Return,
                     Token::Integer(10),
                     Token::Semicolon,
                 ],
-                expected: Statement::new_return(Expression::new_int(10)),
+                expected: Ok(Statement::new_return(Expression::new_int(10))),
+                next_tok: None,
             },
 
             Input {
-                tokens: [
+                tokens: vec![
                     Token::Return,
                     Token::Integer(993322),
                     Token::Semicolon,
                 ],
-                expected: Statement::new_return(Expression::new_int(993322)),
-            }
+                expected: Ok(Statement::new_return(Expression::new_int(993322))),
+                next_tok: None,
+            },
+
+            //missing return
+            Input {
+                tokens: vec![
+                    Token::Let,
+                    Token::Integer(993322),
+                ],
+                expected: Err(ParsingError::new_unexpected(Some(&Token::Let), vec![Token::Return], "return statement")),
+                next_tok: Some(Token::Let),
+            },
+
+            //missing semicolon
+            Input {
+                tokens: vec![
+                    Token::Return,
+                    Token::Integer(993322),
+                ],
+                expected: Err(ParsingError::new_unexpected(None, vec![Token::Semicolon], "return statement")),
+                next_tok: None,
+            },
         ];
 
-        for input in inputs {
-            let mut iterator = input.tokens.into_iter().peekable();
-            let parsed = Statement::parse(&mut iterator).expect("Hardcoded tokens shouldn't fail to parse");
+        for Input {tokens, expected, next_tok} in inputs {
+            let mut iterator = tokens.into_iter().peekable();
+            let parsed = Statement::parse_return_statement(&mut iterator);
 
-            assert_eq!(iterator.next(), None);
-            assert_eq!(parsed, input.expected);
+            assert_eq!(parsed, expected);
+            assert_eq!(iterator.next(), next_tok);
         }
     }
+
 }
