@@ -398,6 +398,28 @@ mod tests {
                 input: "3 < 5 == true",
                 expected: "((3 < 5) == true)",
             },
+
+            //brackets
+            Test {
+                input: "1 + (2 + 3) + 4",
+                expected: "((1 + (2 + 3)) + 4)",
+            },
+            Test {
+                input: "(5 + 5) * 2",
+                expected: "((5 + 5) * 2)",
+            },
+            Test {
+                input: "2 / (5 + 5)",
+                expected: "(2 / (5 + 5))",
+            },
+            Test {
+                input: "-(5 + 5)",
+                expected: "(-(5 + 5))",
+            },
+            Test {
+                input: "!(true == true)",
+                expected: "(!(true == true))",
+            },
         ];
 
         for test in tests {
