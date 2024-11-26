@@ -50,7 +50,7 @@ impl Expression {
     pub fn parse_with_precedence<I: TokenIter>(iter: &mut Peekable<I>, precedence: Precedence) -> Result<Expression, ParsingError> {
         let mut left = match iter.peek() {
             Some(Token::Identifier(_)) => Expression::Identifier {identifier_expression: IdentifierExpression::parse(iter)? },
-            Some(Token::Integer(_)) => Expression::Literal {literal: Literal::parse(iter)? },
+            Some(Token::Integer(_)) | Some(Token::Bool(_)) => Expression::Literal {literal: Literal::parse(iter)? },
             Some(Token::Bang) | Some(Token::Minus) => Expression::parse_prefix_expression(iter)?,
             _ => return Err(ParsingError::new_unexpected(
                             iter.peek(),
@@ -84,12 +84,13 @@ impl Expression {
     }
 
     fn parse_infix_expression<I: TokenIter>(iter: &mut Peekable<I>, left: Expression) -> Result<Expression, ParsingError> {
-        let operator = InfixOperator::parse(iter)?;  
+        let operator = InfixOperator::parse(iter)?;
         iter.next(); // operator parsing doesn't consume the token - do it manually
         let right = Self::parse_with_precedence(iter, operator.precedence())?;
         Ok(Expression::Infix{operator, left: Box::new(left), right: Box::new(right)})
     }
 }
+
 impl Display for Expression {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match &self {
@@ -104,6 +105,7 @@ impl Display for Expression {
         }
     }
 }
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct IdentifierExpression{
     pub identifier: String,
@@ -201,43 +203,58 @@ mod tests {
     }
 
     #[test]
-    fn test_integer_expression() {
-        let input = [
-            Token::Integer(5),
-            Token::Semicolon,
+    fn test_literal_expression() {
+        struct Test {
+            tokens: Vec<Token>,
+            expected: Result<Expression, ParsingError>,
+            next_tok: Option<Token>,
+        }
+
+        let tests = [
+            Test {
+                tokens: vec![Token::Integer(5), Token::Semicolon],
+                expected: Ok(Expression::new_int(5)),
+                next_tok: Some(Token::Semicolon),
+            },
+            Test {
+                tokens: vec![Token::Bool(true), Token::Semicolon],
+                expected: Ok(Expression::new_bool(true)),
+                next_tok: Some(Token::Semicolon),
+            },
         ];
-        let expected = Expression::new_int(5);
 
-        let mut iterator = input.into_iter().peekable();
-        let parsed = Expression::parse(&mut iterator).expect("Hardcoded tokens shouldn't fail to parse");
+        for Test { tokens, expected, next_tok } in tests {
+            let mut iterator = tokens.into_iter().peekable();
+            let parsed = Expression::parse(&mut iterator);
 
-        assert_eq!(iterator.next(), Some(Token::Semicolon));
-        assert_eq!(parsed, expected);
+            assert_eq!(parsed, expected);
+            assert_eq!(iterator.next(), next_tok);
+        }
     }
 
     #[test]
     fn test_prefix_expressions() {
         struct Test {
             tokens: [Token; 3],
-            expected: Expression
+            expected: Result<Expression, ParsingError>
         };
         let tests = [
             Test {
                 tokens: [Token::Minus, Token::Integer(5), Token::Semicolon],
-                expected: Expression::new_prefix(PrefixOperator::Inverse, Expression::new_int(5)),
+                expected: Ok(Expression::new_prefix(PrefixOperator::Inverse, Expression::new_int(5))),
             },
             Test {
                 tokens: [Token::Bang, Token::Integer(15), Token::Semicolon],
-                expected: Expression::new_prefix(PrefixOperator::Negation, Expression::new_int(15)),
+                expected: Ok(Expression::new_prefix(PrefixOperator::Negation, Expression::new_int(15))),
             },
         ];
 
-        for test in tests {
-            let mut iterator = test.tokens.clone().into_iter().peekable();
-            let parsed = Expression::parse(&mut iterator).expect("Hardcoded tokens shouldn't fail to parse");
+        for Test { tokens, expected } in tests {
+            let mut iterator = tokens.clone().into_iter().peekable();
+            let parsed = Expression::parse(&mut iterator);
 
-            assert_eq!(iterator.next(), Some(Token::Semicolon), "input: {:?}, parsed: {:?}", test.tokens, parsed);
-            assert_eq!(parsed, test.expected);
+            assert_eq!(iterator.next(), Some(Token::Semicolon), "input: {:?}, parsed: {:?}", tokens, parsed);
+            assert_eq!(parsed, expected);
         }
     }
 

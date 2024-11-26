@@ -21,7 +21,7 @@ impl PrefixOperator {
         match iter.peek() {
             Some(Token::Minus) => Ok(Inverse),
             Some(Token::Bang) => Ok(Negation),
-            _ => Err(ParsingError::new_unexpected(iter.peek(), vec![Token::Bang, Token::Minus], "PrefixOperator")),
+            _ => Err(ParsingError::new_unexpected(iter.peek(), vec![Token::Bang, Token::Minus], "prefix operator")),
         }
     }
 }
@@ -77,11 +77,12 @@ impl InfixOperator {
             _ => Err(ParsingError::new_unexpected(
                 iter.peek(), 
                 vec![Token::Plus, Token::Minus, Token::Asterisk, Token::Slash, Token::LessThan, Token::GreaterThan, Token::Equals, Token::NotEquals],
-                "InfixOperator"
+                "infix operator"
             )),
 }
     }
 } 
+
 impl Display for InfixOperator {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         use InfixOperator::*;
@@ -121,7 +122,6 @@ mod tests {
         assert!(Precedence::Product < Precedence::Prefix);
         assert!(Precedence::Prefix < Precedence::Call);
     } 
-            //TODO: write a macro to do these automatically
 
     #[test]
     fn test_infix_operator() {
@@ -132,7 +132,6 @@ mod tests {
         }
         let tests = [
             //every operator
-            //TODO: write a macro to do these automatically
             Test {
                 input: vec![Token::Plus],
                 expected: Ok(InfixOperator::Add),
@@ -146,7 +145,7 @@ mod tests {
                     Some(Token::Bang).as_ref(),
                     vec![Token::Plus, Token::Minus, Token::Asterisk, Token::Slash, 
                         Token::LessThan, Token::GreaterThan, Token::Equals, Token::NotEquals],
-                    "InfixOperator")),
+                    "infix operator")),
                 iter_state: Some(Token::Bang),
             },
 
@@ -157,7 +156,7 @@ mod tests {
                     None,
                     vec![Token::Plus, Token::Minus, Token::Asterisk, Token::Slash, 
                         Token::LessThan, Token::GreaterThan, Token::Equals, Token::NotEquals],
-                    "InfixOperator")),
+                    "infix operator")),
                 iter_state: None,
             }
         ];
@@ -192,7 +191,7 @@ mod tests {
                 expected: Err(ParsingError::new_unexpected(
                     Some(&Token::Identifier("foobaz".to_string())),
                     vec![Token::Bang, Token::Minus],
-                    "PrefixOperator")),
+                    "prefix operator")),
                 iter_state: Some(Token::Identifier("foobaz".to_string())),
             },
             Test {
@@ -201,7 +200,7 @@ mod tests {
                 expected: Err(ParsingError::new_unexpected(
                     None,
                     vec![Token::Bang, Token::Minus],
-                    "PrefixOperator")),
+                    "prefix operator")),
                 iter_state: None
             }
         ];
