@@ -315,121 +315,165 @@ mod tests {
     fn test_complex_expressions() {
         struct Test {
             input: &'static str,
-            expected: &'static str,
+            expected: Result<&'static str, ParsingError>,
         }
         let tests = [
             Test {
                 input: "-a",
-                expected: "(-a)",
+                expected: Ok("(-a)"),
             },
             Test {
                 input: "-a - b",
-                expected: "((-a) - b)",
+                expected: Ok("((-a) - b)"),
             },
             Test {
                 input: "-a * b",
-                expected: "((-a) * b)",
+                expected: Ok("((-a) * b)"),
             },
             Test {
                 input: "!-a",
-                expected: "(!(-a))",
+                expected: Ok("(!(-a))"),
             },
             Test {
                 input: "a + b + c",
-                expected: "((a + b) + c)",
+                expected: Ok("((a + b) + c)"),
             },
             Test {
                 input: "a + b - c",
-                expected: "((a + b) - c)",
+                expected: Ok("((a + b) - c)"),
             },
             Test {
                 input: "a * b * c",
-                expected: "((a * b) * c)",
+                expected: Ok("((a * b) * c)"),
             },
             Test {
                 input: "a * b / c",
-                expected: "((a * b) / c)",
+                expected: Ok("((a * b) / c)"),
             },
             Test {
                 input: "a + b / c",
-                expected: "(a + (b / c))",
+                expected: Ok("(a + (b / c))"),
             },
             Test {
                 input: "a + b * c + d / e - f",
-                expected: "(((a + (b * c)) + (d / e)) - f)",
+                expected: Ok("(((a + (b * c)) + (d / e)) - f)"),
             },
             /*
             Test {
                 input: "3 + 4; -5 * 5",
-                expected: "(3 + 4)((-5) * 5)",
+                expected: Ok("(3 + 4)((-5) * 5)"),
             },
             */
             Test {
                 input: "5 > 4 == 3 < 4",
-                expected: "((5 > 4) == (3 < 4))",
+                expected: Ok("((5 > 4) == (3 < 4))"),
             },
             Test {
                 input: "5 < 4 != 3 > 4",
-                expected: "((5 < 4) != (3 > 4))",
+                expected: Ok("((5 < 4) != (3 > 4))"),
             },
             Test {
                 input: "3 + 4 * 5 == 3 * 1 + 4 * 5",
-                expected: "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+                expected: Ok("((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"),
             },
             Test {
                 input: "3 + 4 * 5 == 3 * 1 + 4 * 5",
-                expected: "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+                expected: Ok("((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"),
             },
 
             //boolean
             Test {
                 input: "true",
-                expected: "true",
+                expected: Ok("true"),
             },
             Test {
                 input: "false",
-                expected: "false",
+                expected: Ok("false"),
             },
             Test {
                 input: "3 > 5 == false",
-                expected: "((3 > 5) == false)",
+                expected: Ok("((3 > 5) == false)"),
             },
             Test {
                 input: "3 < 5 == true",
-                expected: "((3 < 5) == true)",
+                expected: Ok("((3 < 5) == true)"),
             },
 
             //brackets
             Test {
                 input: "1 + (2 + 3) + 4",
-                expected: "((1 + (2 + 3)) + 4)",
+                expected: Ok("((1 + (2 + 3)) + 4)"),
             },
             Test {
                 input: "(5 + 5) * 2",
-                expected: "((5 + 5) * 2)",
+                expected: Ok("((5 + 5) * 2)"),
             },
             Test {
                 input: "2 / (5 + 5)",
-                expected: "(2 / (5 + 5))",
+                expected: Ok("(2 / (5 + 5))"),
             },
             Test {
                 input: "-(5 + 5)",
-                expected: "(-(5 + 5))",
+                expected: Ok("(-(5 + 5))"),
             },
             Test {
                 input: "!(true == true)",
-                expected: "(!(true == true))",
+                expected: Ok("(!(true == true))"),
+            },
+
+            Test { 
+                input: "(1 + 2 + 1",
+                expected: Err(ParsingError::new_other("unclosed parenthesis")),
+            },
+            Test { 
+                input: "1 + (2 + 2",
+                expected: Err(ParsingError::new_other("unclosed parenthesis")),
+            },
+            Test {
+                input: "((1 + 2) + 3 ",
+                expected: Err(ParsingError::new_other("unclosed parenthesis")),
+            },
+            Test {
+                input: "1 + ((2 + 3) + 4 ",
+                expected: Err(ParsingError::new_other("unclosed parenthesis")),
+            },
+
+            Test {
+                input: "1 + 2) * 6",
+                expected: Err(ParsingError::new_other("missing opening parenthesis")),
+            },
+            Test {
+                input: "1 + 2 * 6)",
+                expected: Err(ParsingError::new_other("missing opening parenthesis")),
+            },
+            Test {
+                input: "(1) + 2) * 4",
+                expected: Err(ParsingError::new_other("missing opening parenthesis")),
+            },
+            Test {
+                input: "(1 + 2)) * 5",
+                expected: Err(ParsingError::new_other("missing opening parenthesis")),
+            },
+            Test {
+                input: "(1 + 2 * 6))",
+                expected: Err(ParsingError::new_other("missing opening parenthesis")),
             },
         ];
 
         for test in tests {
             let lexer = crate::lexer::Lexer::new(test.input);
             let parsed = Expression::parse(&mut lexer.peekable());
-            assert!(parsed.is_ok(), "failed to parse \'{}\': {:?}", test.input, parsed);
-            let parsed = parsed.expect("if not ok, assert above panics");
-            let formatted = parsed.to_string();
+            let expected = match test.expected {
+                Ok(str) => Ok(str.to_string()),
+                Err(err) => Err(err),
+            };
 
-            assert_eq!(formatted, test.expected, "\ninput: \"{}\" \nparsed: {:#?}", test.input, parsed);
+            let result = match parsed {
+                Ok(expr) => Ok(expr.to_string()),
+                Err(err) => Err(err),
+            };
+
+            assert_eq!(result, expected, "{}", test.input);
         }
     }
 }
