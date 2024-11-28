@@ -52,6 +52,7 @@ impl Expression {
             Some(Token::Identifier(_)) => Expression::Identifier {identifier_expression: IdentifierExpression::parse(iter)? },
             Some(Token::Integer(_)) | Some(Token::Bool(_)) => Expression::Literal {literal: Literal::parse(iter)? },
             Some(Token::Bang) | Some(Token::Minus) => Expression::parse_prefix_expression(iter)?,
+            Some(Token::LeftRound) => Expression::parse_grouped_expression(iter)?,
             _ => return Err(ParsingError::new_unexpected(
                             iter.peek(),
                             vec![Token::Identifier("".to_string()), Token::Integer(0), Token::Bang, Token::Minus],
@@ -88,6 +89,13 @@ impl Expression {
         iter.next(); // operator parsing doesn't consume the token - do it manually
         let right = Self::parse_with_precedence(iter, operator.precedence())?;
         Ok(Expression::Infix{operator, left: Box::new(left), right: Box::new(right)})
+    }
+
+    fn parse_grouped_expression<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Expression, ParsingError> {
+        if(iter.next_if_eq(&Token::LeftRound).is_none()) { return Err(ParsingError::new_other("test")); };
+        let out = Expression::parse_with_precedence(iter, Precedence::Lowest)?;
+        if(iter.next_if_eq(&Token::RightRound).is_none()) { return Err(ParsingError::new_other("test2")); };
+        return Ok(out);
     }
 }
 
