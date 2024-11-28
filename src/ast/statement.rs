@@ -11,6 +11,7 @@ pub enum Statement {
     Let{ identifier: IdentifierExpression, expression: Expression},
     Return { expression: Expression},
     Expression {expression: Expression},
+    Block { body: BlockStatement },
     /*
     IfElse(IfElseStatement),
     Empty,
@@ -36,6 +37,11 @@ impl Statement {
             expression
         }
     }
+    pub fn new_block(block_statement: BlockStatement) -> Statement {
+        Statement::Block {
+            body: block_statement
+        }
+    }
 }
 //parsing
 impl Statement {
@@ -45,6 +51,7 @@ impl Statement {
             None => Err(ParsingError::new_other("EOF")),
             Some(Token::Let) => Self::parse_let_statement(iter),
             Some(Token::Return) => Self::parse_return_statement(iter),
+            Some(Token::LeftCurly) => Self::parse_block_statement(iter),
             _ => Self::parse_expression_statement(iter),
         }
     }
@@ -75,6 +82,46 @@ impl Statement {
         iter.next_if_eq(&Token::Semicolon);
 
         Ok(Statement::new_expr(expression))
+    }
+
+    fn parse_block_statement<I: TokenIter> (iter : &mut Peekable<I>) -> Result<Statement, ParsingError> {
+        Ok(Statement::new_block(BlockStatement::parse(iter)?))
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct BlockStatement {
+    body: Vec<Statement>,
+}
+
+
+impl BlockStatement {
+    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<BlockStatement, ParsingError> {
+        if (iter.next_if_eq(&Token::LeftCurly).is_none()) { return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::LeftCurly], "block statement")); };
+        let mut statements = vec![];
+        let mut errors = vec![];
+        loop {
+            match iter.peek() {
+                Some(&Token::RightCurly) => { break; },
+                None => { return Err(ParsingError::new_other("unclosed curly brace")); },
+                _ => {
+                    match Statement::parse(iter) {
+                        Ok(statement) => { statements.push(statement); },
+                        Err(err) => { errors.push(err); },
+                    }
+                }
+            }
+        }
+
+        if errors.is_empty() {
+            return Ok(BlockStatement::new(statements));
+        } else {
+            return Err(ParsingError::new_multiple(errors));
+        }
+    }
+
+    fn new(body: Vec<Statement>) -> BlockStatement {
+        BlockStatement { body }
     }
 }
 
@@ -287,4 +334,60 @@ mod tests {
         }
     }
 
+    use crate::ast::expression::{IdentifierExpression, InfixOperator};
+
+    #[test]
+    fn test_block_statement() {
+        struct Test {
+            input: Vec<Token>,
+            expected: Result<Statement, ParsingError>,
+        }
+
+        let tests = vec![
+            Test {
+                input: vec![
+                    Token::LeftCurly,
+                    Token::Let, Token::Identifier("x".to_string()), Token::Assign, Token::Integer(5), Token::Semicolon,
+                    Token::Identifier("x".to_string()), Token::LessThan, Token::Integer(3), Token::Semicolon,
+                    Token::RightCurly,
+                ],
+                expected: Ok(Statement::new_block(
+                    BlockStatement::new(vec![
+                        Statement::new_let(IdentifierExpression::new("x"), Expression::new_int(5)),
+                        Statement::new_expr(Expression::new_infix(InfixOperator::LessThan, Expression::new_ident("x"), Expression::new_int(3))),
+                    ]))),
+            },
+            Test {
+                input: vec![
+                    Token::LeftCurly,
+                    Token::Identifier("x".to_string()), Token::LessThan, Token::Integer(3), Token::Semicolon,
+                    Token::RightCurly,
+                ],
+                expected: Ok(Statement::new_block(
+                    BlockStatement::new(vec![
+                        Statement::new_expr(Expression::new_infix(InfixOperator::LessThan, Expression::new_ident("x"), Expression::new_int(3))),
+                    ]))),
+            },
+            Test {
+                input: vec![
+                    Token::LeftCurly,
+                    Token::RightCurly,
+                ],
+                expected: Ok(Statement::new_block(BlockStatement::new(vec![]))),
+            },
+            Test {
+                input: vec![
+                    Token::LeftCurly,
+                    Token::Let, Token::Identifier("x".to_string()), Token::Assign, Token::Integer(5), Token::Semicolon,
+                    Token::Identifier("x".to_string()), Token::LessThan, Token::Integer(3), Token::Semicolon,
+                ],
+                expected: Err(ParsingError::new_other("unclosed curly brace")),
+            },
+        ];
+
+        for Test{input, expected} in tests {
+            let result = Statement::parse(&mut input.into_iter().peekable());
+            assert_eq!(result, expected);
+        }
+    }
 }
