@@ -102,7 +102,7 @@ impl BlockStatement {
         let mut errors = vec![];
         loop {
             match iter.peek() {
-                Some(&Token::RightCurly) => { break; },
+                Some(&Token::RightCurly) => { iter.next(); break; },
                 None => { return Err(ParsingError::new_other("unclosed curly brace")); },
                 _ => {
                     match Statement::parse(iter) {
@@ -122,6 +122,10 @@ impl BlockStatement {
 
     fn new(body: Vec<Statement>) -> BlockStatement {
         BlockStatement { body }
+    }
+
+    pub fn len(&self) -> usize {
+        self.body.len()
     }
 }
 

@@ -5,6 +5,7 @@ use crate::ast::TokenIter;
 use crate::ast::ParsingError;
 use std::iter::Peekable;
 use std::fmt::{Formatter, Display};
+use crate::ast::BlockStatement;
 
 mod operators;
 pub use operators::*;
@@ -39,6 +40,10 @@ impl Expression {
     pub fn new_infix(operator: InfixOperator, left: Expression, right: Expression) -> Expression {
         Expression::Infix { operator, left: Box::new(left), right: Box::new(right)}
     }
+    pub fn new_fn(parameters: Vec<IdentifierExpression>, body: BlockStatement) -> Expression {
+        Expression::Literal { literal: Literal::new_fn(parameters, body) }
+
+    }
 }
 
 //parsing
@@ -50,11 +55,11 @@ impl Expression {
     pub fn parse_with_precedence<I: TokenIter>(iter: &mut Peekable<I>, precedence: Precedence) -> Result<Expression, ParsingError> {
         let mut left = match iter.peek() {
             Some(Token::Identifier(_)) => Expression::Identifier {identifier_expression: IdentifierExpression::parse(iter)? },
-            Some(Token::Integer(_)) | Some(Token::Bool(_)) => Expression::Literal {literal: Literal::parse(iter)? },
+            Some(Token::Integer(_)) | Some(Token::Bool(_)) | Some(Token::Function) => Expression::Literal {literal: Literal::parse(iter)? },
             Some(Token::Bang) | Some(Token::Minus) => Expression::parse_prefix_expression(iter)?,
             _ => return Err(ParsingError::new_unexpected(
                             iter.peek(),
-                            vec![Token::Identifier("".to_string()), Token::Integer(0), Token::Bang, Token::Minus],
+                            vec![Token::Identifier("".to_string()), Token::Integer(0), Token::Bool(true), Token::Function, Token::Bang, Token::Minus],
                             "expression"))
         };
 
@@ -136,10 +141,14 @@ impl Display for IdentifierExpression {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Literal{
     Integer(i64),
     Bool(bool),
+    Function {
+        parameters: Vec<IdentifierExpression>,
+        body: BlockStatement,
+    }
 }
 
 impl Literal {
@@ -148,6 +157,9 @@ impl Literal {
     }
     pub fn new_bool(boolean: bool) -> Literal {
         Literal::Bool(boolean)
+    }
+    pub fn new_fn(parameters: Vec<IdentifierExpression>, body: BlockStatement) -> Literal {
+        Literal::Function{ parameters, body }
     }
 }
 
@@ -164,13 +176,42 @@ impl Literal {
                 iter.next();
                 Ok(Literal::Bool(b))
             }
+            Some(Token::Function) => {
+                Ok(Literal::parse_fn_literal(iter)?)
+            }
             _ => 
                 Err(ParsingError::new_unexpected(
                     iter.peek(),
                     //TODO: Fix this once these tokens store Option<_>
-                    vec![Token::Integer(0), Token::Bool(true)],
+                    vec![Token::Integer(0), Token::Bool(true), Token::Function],
                     "literal expression")),
         }
+    }
+
+    fn parse_fn_literal<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Literal, ParsingError> {
+        if (iter.next_if_eq(&Token::Function).is_none()) {
+            return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::Function], "function literal"));
+        }
+        if (iter.next_if_eq(&Token::LeftRound).is_none()) {
+            return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::LeftRound], "function literal"));
+        }
+        let mut parameters = vec![];
+        loop {
+            match iter.peek() {
+                Some(&Token::RightRound) => { iter.next(); break; },
+                Some(&Token::Identifier(_)) => {
+                    parameters.push(IdentifierExpression::parse(iter)?);
+                    match iter.peek() {
+                        Some(Token::Comma) => { iter.next(); },
+                        Some(Token::RightRound) => {},
+                        _ => { return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::RightRound, Token::Comma], "function literal")); },
+                    }
+                }
+                _ => { return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::Identifier("".to_string())], "function literal")); },
+            }
+        }
+        let body = BlockStatement::parse(iter)?;
+        Ok(Literal::new_fn(parameters, body))
     }
 }
 
@@ -179,6 +220,10 @@ impl Display for Literal {
         match &self {
             Literal::Integer(int) => write!(f, "{}", int),
             Literal::Bool(boolean) => write!(f, "{}", boolean),
+            Literal::Function {parameters, body} => {
+                // TODO: make this print everything, not just counts
+                write!(f, "fn({} parameters){{ {} statements }}", parameters.len(), body.len())
+            },
         }
     }
 }
@@ -221,6 +266,26 @@ mod tests {
                 expected: Ok(Expression::new_bool(true)),
                 next_tok: Some(Token::Semicolon),
             },
+            // TODO: needs more exhaustive tests
+            Test {
+                tokens: vec![
+                    Token::Function, Token::LeftRound, Token::Identifier("x".to_string()), Token::Comma, Token::Identifier("y".to_string()), Token::RightRound,
+                    Token::LeftCurly,
+                    Token::Identifier("x".to_string()), Token::Plus, Token::Identifier("y".to_string()), Token::Semicolon,
+                    Token::RightCurly,
+                ],
+                expected: Ok(Expression::new_fn(
+                    vec![IdentifierExpression::new("x"), IdentifierExpression::new("y")],
+                    BlockStatement::parse(
+                        &mut vec![
+                            Token::LeftCurly,
+                            Token::Identifier("x".to_string()), Token::Plus, Token::Identifier("y".to_string()), Token::Semicolon,
+                            Token::RightCurly
+                        ].into_iter().peekable()
+                    ).expect("hardcoded tokens shouldn't fail to parse")
+                )),
+                next_tok: None,
+            }
         ];
 
         for Test { tokens, expected, next_tok } in tests {
