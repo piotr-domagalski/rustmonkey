@@ -343,13 +343,14 @@ mod tests {
     #[test]
     fn test_block_statement() {
         struct Test {
-            input: Vec<Token>,
+            tokens: Vec<Token>,
             expected: Result<Statement, ParsingError>,
+            next_tok: Option<Token>,
         }
 
         let tests = vec![
             Test {
-                input: vec![
+                tokens: vec![
                     Token::LeftCurly,
                     Token::Let, Token::Identifier("x".to_string()), Token::Assign, Token::Integer(5), Token::Semicolon,
                     Token::Identifier("x".to_string()), Token::LessThan, Token::Integer(3), Token::Semicolon,
@@ -360,9 +361,10 @@ mod tests {
                         Statement::new_let(IdentifierExpression::new("x"), Expression::new_int(5)),
                         Statement::new_expr(Expression::new_infix(InfixOperator::LessThan, Expression::new_ident("x"), Expression::new_int(3))),
                     ]))),
+                next_tok: None,
             },
             Test {
-                input: vec![
+                tokens: vec![
                     Token::LeftCurly,
                     Token::Identifier("x".to_string()), Token::LessThan, Token::Integer(3), Token::Semicolon,
                     Token::RightCurly,
@@ -371,27 +373,33 @@ mod tests {
                     BlockStatement::new(vec![
                         Statement::new_expr(Expression::new_infix(InfixOperator::LessThan, Expression::new_ident("x"), Expression::new_int(3))),
                     ]))),
+                next_tok: None,
             },
             Test {
-                input: vec![
+                tokens: vec![
                     Token::LeftCurly,
                     Token::RightCurly,
                 ],
                 expected: Ok(Statement::new_block(BlockStatement::new(vec![]))),
+                next_tok: None,
             },
             Test {
-                input: vec![
+                tokens: vec![
                     Token::LeftCurly,
                     Token::Let, Token::Identifier("x".to_string()), Token::Assign, Token::Integer(5), Token::Semicolon,
                     Token::Identifier("x".to_string()), Token::LessThan, Token::Integer(3), Token::Semicolon,
                 ],
                 expected: Err(ParsingError::new_other("unclosed curly brace")),
+                next_tok: None,
             },
         ];
 
-        for Test{input, expected} in tests {
-            let result = Statement::parse(&mut input.into_iter().peekable());
-            assert_eq!(result, expected);
+        for Test {tokens, expected, next_tok} in tests {
+            let mut iterator = tokens.clone().into_iter().peekable();
+            let parsed = Statement::parse_block_statement(&mut iterator);
+
+            assert_eq!(parsed, expected, "{:?}", tokens);
+            assert_eq!(iterator.next(), next_tok, "{:?}", tokens);
         }
     }
 }
