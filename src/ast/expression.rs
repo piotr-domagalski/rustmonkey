@@ -16,10 +16,9 @@ pub enum Expression {
     Literal { literal: Literal},
     Prefix { operator: PrefixOperator, expression: Box<Expression> },
     Infix { operator: InfixOperator, left: Box<Expression>, right: Box<Expression> },
+    If { condition: Box<Expression>, consequence: BlockStatement, alternative: Option<BlockStatement> }
     /*
-    Infix(InfixExpression),
     Call(CallExpression),
-    If(IfExpression),
     */
 }
 
@@ -42,7 +41,9 @@ impl Expression {
     }
     pub fn new_fn(parameters: Vec<IdentifierExpression>, body: BlockStatement) -> Expression {
         Expression::Literal { literal: Literal::new_fn(parameters, body) }
-
+    }
+    pub fn new_if(condition: Expression, consequence: BlockStatement, alternative: Option<BlockStatement>) -> Expression {
+        Expression::If { condition: Box::new(condition), consequence, alternative }
     }
 }
 
@@ -51,7 +52,7 @@ impl Expression {
     pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Expression, ParsingError> {
         let expr = Self::parse_with_precedence(iter, Precedence::Lowest)?;
         match iter.peek() {
-            Some(Token::Semicolon) | None => Ok(expr),
+            Some(Token::Semicolon | Token::RightCurly ) | None => Ok(expr),
             Some(Token::RightRound) => Err(ParsingError::new_other("missing opening parenthesis")),
             _ => panic!("parse_with_precedence should never leave the lexer at a token other than ;, ), or None")
         }
@@ -63,6 +64,7 @@ impl Expression {
             Some(Token::Integer(_)) | Some(Token::Bool(_)) | Some(Token::Function) => Expression::Literal {literal: Literal::parse(iter)? },
             Some(Token::Bang) | Some(Token::Minus) => Expression::parse_prefix_expression(iter)?,
             Some(Token::LeftRound) => Expression::parse_grouped_expression(iter)?,
+            Some(Token::If) => Expression::parse_if_expression(iter)?,
             _ => return Err(ParsingError::new_unexpected(
                             iter.peek(),
                             vec![Token::Identifier("".to_string()), Token::Integer(0), Token::Bool(true), Token::Function, Token::Bang, Token::Minus],
@@ -71,7 +73,7 @@ impl Expression {
 
         loop {
             let next_precedence = match iter.peek() {
-                Some(Token::Semicolon | Token::RightRound) | None => return Ok(left),
+                Some(Token::Semicolon | Token::RightRound | Token::RightCurly ) | None => return Ok(left),
                 Some(_) => { InfixOperator::parse(iter)?.precedence() },
             };
             if precedence >= next_precedence {
@@ -102,6 +104,28 @@ impl Expression {
         if(iter.next_if_eq(&Token::RightRound).is_none()) { return Err(ParsingError::new_other("unclosed parenthesis")); };
         return Ok(out);
     }
+    fn parse_if_expression<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Expression, ParsingError> {
+        match iter.peek() {
+            Some(&Token::If) => { iter.next(); },
+            other => { return Err(ParsingError::new_unexpected(other, vec![Token::If], "if expression")); },
+        }
+        match iter.peek() {
+            Some(&Token::LeftRound) => {},
+            other => { return Err(ParsingError::new_unexpected(other, vec![Token::LeftRound], "if expression")); },
+        }
+
+        let mut condition = Expression::parse_grouped_expression(iter)?;
+        let consequence = BlockStatement::parse(iter)?;
+        let alternative = match iter.peek() {
+            Some(Token::Else) => {
+                iter.next();
+                Some(BlockStatement::parse(iter)?)
+            },
+            _ => None,
+        };
+
+        return Ok(Expression::new_if(condition, consequence, alternative));
+    }
 }
 
 impl Display for Expression {
@@ -115,6 +139,10 @@ impl Display for Expression {
                 write!(f, "({}{})", operator, expression),
             Expression::Infix{operator, left, right} =>
                 write!(f, "({} {} {})", left, operator, right),
+            Expression::If{condition, consequence, alternative: None} =>
+                write!(f, "if {} {}", condition, consequence),
+            Expression::If{condition, consequence, alternative: Some(alt)} =>
+                write!(f, "if {} {} else {}", condition, consequence, alt),
         }
     }
 }
@@ -230,7 +258,7 @@ impl Display for Literal {
             Literal::Bool(boolean) => write!(f, "{}", boolean),
             Literal::Function {parameters, body} => {
                 // TODO: make this print everything, not just counts
-                write!(f, "fn({} parameters){{ {} statements }}", parameters.len(), body.len())
+                write!(f, "fn({} parameters){}", parameters.len(), body)
             },
         }
     }
@@ -530,6 +558,23 @@ mod tests {
             Test {
                 input: "(1 + 2 * 6))",
                 expected: Err(ParsingError::new_other("missing opening parenthesis")),
+            },
+
+            Test {
+                input: "if (x > y) { x; }",
+                expected: Ok("if (x > y) { block stmt len=1 }")
+            },
+            Test {
+                input: "if (x > y) { x; } else { y; }",
+                expected: Ok("if (x > y) { block stmt len=1 } else { block stmt len=1 }")
+            },
+            Test {
+                input: "if (x > y) { x }",
+                expected: Ok("if (x > y) { block stmt len=1 }")
+            },
+            Test {
+                input: "if (x > y) { x } else { y }",
+                expected: Ok("if (x > y) { block stmt len=1 } else { block stmt len=1 }")
             },
         ];
 
