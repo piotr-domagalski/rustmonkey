@@ -203,19 +203,18 @@ mod tests {
                     Token::Identifier(String::from("x")),
                     Token::Assign,
                     Token::Integer(838383),
-                    Token::Bang
                 ],
-                expected: Err(ParsingError::new_unexpected(Some(&Token::Bang), vec![Token::Semicolon], "let statement")),
-                next_tok: Some(Token::Bang),
+                expected: Err(ParsingError::new_unexpected(None, vec![Token::Semicolon], "let statement")),
+                next_tok: None,
             },
         ];
 
         for Input {tokens, expected, next_tok} in inputs {
-            let mut iterator = tokens.into_iter().peekable();
+            let mut iterator = tokens.clone().into_iter().peekable();
             let parsed = Statement::parse_let_statement(&mut iterator);
 
-            assert_eq!(parsed, expected);
-            assert_eq!(iterator.next(), next_tok);
+            assert_eq!(parsed, expected, "{:?}", tokens);
+            assert_eq!(iterator.next(), next_tok, "{:?}", tokens);
         }
     }
 

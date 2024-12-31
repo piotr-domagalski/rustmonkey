@@ -44,7 +44,12 @@ impl Expression {
 //parsing
 impl Expression {
     pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Expression, ParsingError> {
-        Self::parse_with_precedence(iter, Precedence::Lowest)
+        let expr = Self::parse_with_precedence(iter, Precedence::Lowest)?;
+        match iter.peek() {
+            Some(Token::Semicolon) | None => Ok(expr),
+            Some(Token::RightRound) => Err(ParsingError::new_other("missing opening parenthesis")),
+            _ => panic!("parse_with_precedence should never leave the lexer at a token other than ;, ), or None")
+        }
     }
 
     pub fn parse_with_precedence<I: TokenIter>(iter: &mut Peekable<I>, precedence: Precedence) -> Result<Expression, ParsingError> {
@@ -61,13 +66,8 @@ impl Expression {
 
         loop {
             let next_precedence = match iter.peek() {
-                Some(Token::Semicolon) | None => return Ok(left),
-                Some(_) => {
-                    match InfixOperator::parse(iter) {
-                        Ok(op) => op.precedence(),
-                        Err(_) => Precedence::Lowest,
-                    }
-                }
+                Some(Token::Semicolon | Token::RightRound) | None => return Ok(left),
+                Some(_) => { InfixOperator::parse(iter)?.precedence() },
             };
             if precedence >= next_precedence {
                 return Ok(left);
@@ -92,9 +92,9 @@ impl Expression {
     }
 
     fn parse_grouped_expression<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Expression, ParsingError> {
-        if(iter.next_if_eq(&Token::LeftRound).is_none()) { return Err(ParsingError::new_other("test")); };
+        if(iter.next_if_eq(&Token::LeftRound).is_none()) { return Err(ParsingError::new_other("missing opening parenthesis")); };
         let out = Expression::parse_with_precedence(iter, Precedence::Lowest)?;
-        if(iter.next_if_eq(&Token::RightRound).is_none()) { return Err(ParsingError::new_other("test2")); };
+        if(iter.next_if_eq(&Token::RightRound).is_none()) { return Err(ParsingError::new_other("unclosed parenthesis")); };
         return Ok(out);
     }
 }
