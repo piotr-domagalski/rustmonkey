@@ -53,7 +53,7 @@ impl Expression {
     pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Expression, ParsingError> {
         let expr = Self::parse_with_precedence(iter, Precedence::Lowest)?;
         match iter.peek() {
-            Some(Token::Semicolon | Token::RightCurly ) | None => Ok(expr),
+            Some(Token::Semicolon | Token::RightCurly | Token::Comma) | None => Ok(expr),
             Some(Token::RightRound) => Err(ParsingError::new_other("missing opening parenthesis")),
             _ => panic!("parse_with_precedence should never leave the lexer at a token other than ;, ), or None")
         }
@@ -74,7 +74,7 @@ impl Expression {
 
         loop {
             match iter.peek() {
-                Some(Token::Semicolon | Token::RightRound | Token::RightCurly ) | None => return Ok(left),
+                Some(Token::Semicolon | Token::RightRound | Token::RightCurly | Token::Comma ) | None => return Ok(left),
                 Some(Token::LeftRound) => {
                     left = Self::parse_call_expression(iter, left)?;
                 }
@@ -175,8 +175,16 @@ impl Display for Expression {
                 write!(f, "if {} {}", condition, consequence),
             Expression::If{condition, consequence, alternative: Some(alt)} =>
                 write!(f, "if {} {} else {}", condition, consequence, alt),
-            Expression::Call{callable, arguments} =>
-                write!(f, "{}({:?})", callable, arguments),
+            Expression::Call{callable, arguments} => {
+                let mut arg_string = "".to_string();
+                if arguments.len() != 0 {
+                    arg_string += &format!("{}", arguments[0]);
+                    for arg in &arguments[1..] {
+                        arg_string += &format!(", {}", arg);
+                    }
+                }
+                write!(f, "{}({})", callable, arg_string)
+            }
         }
     }
 }
@@ -355,7 +363,67 @@ mod tests {
                     ).expect("hardcoded tokens shouldn't fail to parse")
                 )),
                 next_tok: None,
-            }
+            },
+
+            Test {
+                tokens: vec![Token::Function, Token::LeftRound, Token::RightRound,
+                    Token::LeftCurly, Token::RightCurly, Token::Semicolon
+                ],
+                expected: Ok(Expression::new_fn(
+                    vec![],
+                    BlockStatement::parse(
+                        &mut vec![
+                            Token::LeftCurly,
+                            Token::RightCurly
+                        ].into_iter().peekable()
+                    ).expect("hardcoded tokens shouldn't fail to parse")
+                )),
+                next_tok: Some(Token::Semicolon),
+            },
+
+            Test {
+                tokens: vec![Token::Function, Token::LeftRound,
+                        Token::Identifier("x".to_string()),
+                    Token::RightRound,
+                    Token::LeftCurly, Token::RightCurly, Token::Semicolon
+                ],
+                expected: Ok(Expression::new_fn(
+                    vec![
+                        IdentifierExpression::new("x"),
+                    ],
+                    BlockStatement::parse(
+                        &mut vec![
+                            Token::LeftCurly,
+                            Token::RightCurly
+                        ].into_iter().peekable()
+                    ).expect("hardcoded tokens shouldn't fail to parse")
+                )),
+                next_tok: Some(Token::Semicolon),
+            },
+
+            Test {
+                tokens: vec![Token::Function, Token::LeftRound,
+                        Token::Identifier("x".to_string()), Token::Comma,
+                        Token::Identifier("y".to_string()), Token::Comma,
+                        Token::Identifier("z".to_string()), Token::Comma, //TODO:this shouldn't pass
+                    Token::RightRound,
+                    Token::LeftCurly, Token::RightCurly, Token::Semicolon
+                ],
+                expected: Ok(Expression::new_fn(
+                    vec![
+                        IdentifierExpression::new("x"),
+                        IdentifierExpression::new("y"),
+                        IdentifierExpression::new("z"),
+                    ],
+                    BlockStatement::parse(
+                        &mut vec![
+                            Token::LeftCurly,
+                            Token::RightCurly
+                        ].into_iter().peekable()
+                    ).expect("hardcoded tokens shouldn't fail to parse")
+                )),
+                next_tok: Some(Token::Semicolon),
+            },
         ];
 
         for Test { tokens, expected, next_tok } in tests {
@@ -446,6 +514,135 @@ mod tests {
             assert_eq!(iterator.next(), Some(Token::Semicolon));
         }
     }
+    #[test]
+    fn test_if_expressions() {
+        use crate::ast::{Statement, BlockStatement};
+        struct Test {
+            tokens: Vec<Token>,
+            expected: Expression,
+            next_token: Option<Token>,
+        }
+
+        let tests = [
+            Test {
+                tokens: vec![
+                    Token::If,
+                        Token::LeftRound, Token::Identifier(String::from("x")), Token::GreaterThan, Token::Identifier(String::from("y")), Token::RightRound,
+                    Token::LeftCurly,
+                        Token::Identifier(String::from("x")), Token::Semicolon,
+                    Token::RightCurly,
+                ],
+                expected: Expression::new_if(
+                    Expression::new_infix(InfixOperator::GreaterThan, Expression::new_ident("x"), Expression::new_ident("y")),
+                    BlockStatement::parse(
+                        &mut vec![
+                            Token::LeftCurly,
+                                Token::Identifier(String::from("x")), Token::Semicolon,
+                            Token::RightCurly,
+                        ].into_iter().peekable()
+                    ).expect("hardcoded tokens shouldn't fail to parse"),
+                    None
+                ),
+                next_token: None,
+            },
+
+            Test {
+                tokens: vec![
+                    Token::If,
+                        Token::LeftRound, Token::Identifier(String::from("x")), Token::GreaterThan, Token::Identifier(String::from("y")), Token::RightRound,
+                    Token::LeftCurly,
+                        Token::Identifier(String::from("x")), Token::Semicolon,
+                    Token::RightCurly,
+                    Token::Else,
+                    Token::LeftCurly,
+                        Token::Identifier(String::from("y")), Token::Semicolon,
+                    Token::RightCurly,
+                ],
+                expected: Expression::new_if(
+                    Expression::new_infix(InfixOperator::GreaterThan, Expression::new_ident("x"), Expression::new_ident("y")),
+                    BlockStatement::parse(
+                        &mut vec![
+                            Token::LeftCurly,
+                                Token::Identifier(String::from("x")), Token::Semicolon,
+                            Token::RightCurly,
+                        ].into_iter().peekable()
+                    ).expect("hardcoded tokens shouldn't fail to parse"),
+                    Some(BlockStatement::parse(
+                        &mut vec![
+                            Token::LeftCurly,
+                                Token::Identifier(String::from("y")), Token::Semicolon,
+                            Token::RightCurly,
+                        ].into_iter().peekable()
+                    ).expect("hardcoded tokens shouldn't fail to parse"))
+                ),
+                next_token: None,
+            },
+        ];
+
+        for Test {tokens, expected, next_token} in tests {
+            let mut iterator = tokens.clone().into_iter().peekable();
+            let parsed = Expression::parse(&mut iterator);
+
+            assert!(parsed.is_ok());
+            let parsed = parsed.expect("above assert should ensure this is the Ok variant");
+            assert_eq!(expected, parsed, "expected: {}\nparsed: {}", expected, parsed);
+            assert_eq!(iterator.next(), next_token, "input: {:?}, parsed: {:?}", tokens, parsed);
+
+        }
+    }
+
+    #[test]
+    fn test_call_expressions() {
+        use crate::ast::{Statement, BlockStatement};
+        struct Test {
+            tokens: Vec<Token>,
+            expected: Expression,
+            next_token: Option<Token>,
+        }
+
+        let tests = [
+            Test {
+                tokens: vec![
+                    Token::Identifier(String::from("add")), Token::LeftRound,
+                        Token::Integer(1), Token::Comma,
+                        Token::Integer(2), Token::Asterisk, Token::Integer(3), Token::Comma,
+                        Token::Integer(4), Token::Plus, Token::Integer(5), Token::Comma,
+                    Token::RightRound,
+                    Token::Semicolon
+                ],
+                expected: Expression::new_call(
+                    Expression::new_ident("add"),
+                    vec![
+                        Expression::new_int(1),
+                        Expression::new_infix(
+                            InfixOperator::Mul,
+                            Expression::new_int(2),
+                            Expression::new_int(3),
+                        ),
+                        Expression::new_infix(
+                            InfixOperator::Add,
+                            Expression::new_int(4),
+                            Expression::new_int(5),
+                        ),
+                    ]
+                ),
+                next_token: Some(Token::Semicolon),
+            },
+        ];
+
+        for Test {tokens, expected, next_token} in tests {
+            let mut iterator = tokens.clone().into_iter().peekable();
+            let parsed = Expression::parse(&mut iterator);
+
+            assert!(parsed.is_ok(), "expected ok, got {:?}", parsed);
+            let parsed = parsed.expect("above assert should ensure this is the Ok variant");
+            assert_eq!(expected, parsed, "expected: {}\nparsed: {}", expected, parsed);
+            assert_eq!(iterator.next(), next_token, "input: {:?}, parsed: {:?}", tokens, parsed);
+
+        }
+
+    }
+
     #[test]
     fn test_complex_expressions() {
         struct Test {
