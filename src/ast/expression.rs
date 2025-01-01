@@ -16,10 +16,8 @@ pub enum Expression {
     Literal { literal: Literal},
     Prefix { operator: PrefixOperator, expression: Box<Expression> },
     Infix { operator: InfixOperator, left: Box<Expression>, right: Box<Expression> },
-    If { condition: Box<Expression>, consequence: BlockStatement, alternative: Option<BlockStatement> }
-    /*
-    Call(CallExpression),
-    */
+    If { condition: Box<Expression>, consequence: BlockStatement, alternative: Option<BlockStatement> },
+    Call { callable: Box<Expression>, arguments: Vec<Expression> },
 }
 
 //builders
@@ -44,6 +42,9 @@ impl Expression {
     }
     pub fn new_if(condition: Expression, consequence: BlockStatement, alternative: Option<BlockStatement>) -> Expression {
         Expression::If { condition: Box::new(condition), consequence, alternative }
+    }
+    pub fn new_call(callable: Expression, arguments: Vec<Expression>) -> Expression {
+        Expression::Call { callable: Box::new(callable), arguments }
     }
 }
 
@@ -72,15 +73,19 @@ impl Expression {
         };
 
         loop {
-            let next_precedence = match iter.peek() {
+            match iter.peek() {
                 Some(Token::Semicolon | Token::RightRound | Token::RightCurly ) | None => return Ok(left),
-                Some(_) => { InfixOperator::parse(iter)?.precedence() },
-            };
-            if precedence >= next_precedence {
-                return Ok(left);
+                Some(Token::LeftRound) => {
+                    left = Self::parse_call_expression(iter, left)?;
+                }
+                Some(_) => {
+                    let next_precedence = InfixOperator::parse(iter)?.precedence();
+                    if precedence >= next_precedence {
+                        return Ok(left);
+                    }
+                    left = Self::parse_infix_expression(iter, left)?;
+                },
             }
-
-            left = Self::parse_infix_expression(iter, left)?;
         }
         Ok(left)
     }
@@ -104,6 +109,7 @@ impl Expression {
         if(iter.next_if_eq(&Token::RightRound).is_none()) { return Err(ParsingError::new_other("unclosed parenthesis")); };
         return Ok(out);
     }
+
     fn parse_if_expression<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Expression, ParsingError> {
         match iter.peek() {
             Some(&Token::If) => { iter.next(); },
@@ -126,6 +132,32 @@ impl Expression {
 
         return Ok(Expression::new_if(condition, consequence, alternative));
     }
+
+    fn parse_call_expression<I: TokenIter>(iter: &mut Peekable<I>, left: Expression) -> Result<Expression, ParsingError> {
+        match iter.peek() {
+            Some(&Token::LeftRound) => { iter.next(); },
+            other => { return Err(ParsingError::new_unexpected(other, vec![Token::LeftRound], "call expression")); },
+        }
+
+        let mut args = vec![];
+        loop {
+            match iter.peek() {
+                Some(&Token::RightRound) => { iter.next(); break; },
+                None => { return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::Identifier("".to_string())], "call expression")); },
+                Some(_) => {
+                    args.push(Expression::parse(iter)?);
+                    match iter.peek() {
+                        Some(Token::Comma) => { iter.next(); },
+                        Some(Token::RightRound) => {},
+                        _ => { return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::RightRound, Token::Comma], "call expression")); },
+                    }
+                }
+            }
+        }
+        //args
+        //
+        Ok(Expression::new_call(left, args))
+    }
 }
 
 impl Display for Expression {
@@ -143,6 +175,8 @@ impl Display for Expression {
                 write!(f, "if {} {}", condition, consequence),
             Expression::If{condition, consequence, alternative: Some(alt)} =>
                 write!(f, "if {} {} else {}", condition, consequence, alt),
+            Expression::Call{callable, arguments} =>
+                write!(f, "{}({:?})", callable, arguments),
         }
     }
 }
