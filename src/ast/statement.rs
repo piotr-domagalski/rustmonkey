@@ -12,8 +12,6 @@ mod parsing;
 pub use parsing::*;
 mod display;
 pub use display::*;
-mod block_statement;
-pub use block_statement::*;
 mod tests;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
