@@ -1,10 +1,12 @@
-#![allow(unused)]
-use crate::token::Token;
-use crate::ast::TokenIter;
-use crate::ast::Expression;
-use crate::ast::IdentifierExpression;
-use crate::ast::ParsingError;
 use std::iter::Peekable;
+use std::fmt::{Display, Formatter};
+use crate::token::Token;
+use crate::ast::{
+    TokenIter,
+    Expression,
+    IdentifierExpression,
+    ParsingError
+};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Statement {
@@ -18,31 +20,23 @@ pub enum Statement {
     None,
     */
 }
+
 //builders
 impl Statement {
     pub fn new_let(identifier: IdentifierExpression, expression: Expression) -> Statement{
-        Statement::Let{
-            identifier,
-            expression,
-        }
+        Statement::Let{ identifier, expression }
     }
     pub fn new_return(expression: Expression) -> Statement {
-        Statement::Return {
-            expression
-        }
+        Statement::Return { expression }
     }
-
     pub fn new_expr(expression: Expression) -> Statement {
-        Statement::Expression {
-            expression
-        }
+        Statement::Expression { expression }
     }
     pub fn new_block(block_statement: BlockStatement) -> Statement {
-        Statement::Block {
-            body: block_statement
-        }
+        Statement::Block { body: block_statement }
     }
 }
+
 //parsing
 impl Statement {
     pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Statement, ParsingError>
@@ -56,7 +50,6 @@ impl Statement {
         }
     }
 
-    // let <identifier> = <expression> ;
     fn parse_let_statement<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Statement, ParsingError> {
         if iter.next_if_eq(&Token::Let).is_none() { return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::Let], "let statement")); }
         let identifier = IdentifierExpression::parse(iter)?;
@@ -67,7 +60,6 @@ impl Statement {
         Ok(Statement::new_let(identifier, expression))
     }
 
-    // return <expression> ;
     fn parse_return_statement<I: TokenIter> (iter: &mut Peekable<I>) -> Result<Statement, ParsingError>
     {
         if iter.next_if_eq(&Token::Return).is_none() { return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::Return], "return statement")); }
@@ -89,7 +81,6 @@ impl Statement {
     }
 }
 
-use std::fmt::{Display, Formatter};
 impl Display for Statement {
     fn fmt (&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -110,7 +101,17 @@ pub struct BlockStatement {
     body: Vec<Statement>,
 }
 
+impl BlockStatement {
+    fn new(body: Vec<Statement>) -> BlockStatement {
+        BlockStatement { body }
+    }
 
+    pub fn len(&self) -> usize {
+        self.body.len()
+    }
+}
+
+//parsing
 impl BlockStatement {
     pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<BlockStatement, ParsingError> {
         if (iter.next_if_eq(&Token::LeftCurly).is_none()) { return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::LeftCurly], "block statement")); };
@@ -135,20 +136,12 @@ impl BlockStatement {
             return Err(ParsingError::new_multiple(errors));
         }
     }
-
-    fn new(body: Vec<Statement>) -> BlockStatement {
-        BlockStatement { body }
-    }
-
-    pub fn len(&self) -> usize {
-        self.body.len()
-    }
 }
+
 impl Display for BlockStatement {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{{ block stmt len={} }}", self.len())
     }
-
 }
 
 #[cfg(test)]
