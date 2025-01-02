@@ -11,8 +11,6 @@ mod parsing;
 pub use parsing::*;
 mod display;
 pub use display::*;
-mod literal;
-pub use literal::*;
 mod operators;
 pub use operators::*;
 
