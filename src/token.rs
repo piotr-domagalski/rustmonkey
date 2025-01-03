@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter};
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Token {
     Illegal(String),
@@ -41,8 +43,6 @@ pub enum Token {
     Return,
 }
 
-use std::fmt::{Display, Formatter};
-
 impl Display for Token {
     fn fmt (&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let str = match self {
@@ -57,7 +57,7 @@ impl Display for Token {
             },
 
             //literals
-            Token::Integer(_integer) => "integer".to_string(),
+            Token::Integer(_integer) => "integer".to_string(), //TODO: make these display the value
             Token::Bool(_bool) => "boolean".to_string(),
 
             //operators
@@ -175,9 +175,6 @@ mod tests {
 
         for Test{input, expected} in tests {
             assert_eq!(input.to_string(), expected);
-
         }
     }
-
-
 }

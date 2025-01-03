@@ -1,10 +1,6 @@
-use std::{
-    fmt::{Formatter, Display},
-    iter::Peekable,
-};
-use crate::{
-    ast::{ParsingError, TokenIter}, token::Token
-};
+use std::fmt::{Formatter, Display};
+use std::iter::Peekable;
+use crate::ast::{ParsingError, TokenIter};
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum PrefixOperator {
@@ -56,7 +52,7 @@ impl InfixOperator {
                 Precedence::Equals,
             LessThan | GreaterThan =>
                 Precedence::LessGreater,
-            Add | Sub => 
+            Add | Sub =>
                 Precedence::Sum,
             Mul | Div =>
                 Precedence::Product,
@@ -75,13 +71,13 @@ impl InfixOperator {
             Some(Token::Equals) => Ok(Equals),
             Some(Token::NotEquals) => Ok(NotEquals),
             _ => Err(ParsingError::new_unexpected(
-                iter.peek(), 
+                iter.peek(),
                 vec![Token::Plus, Token::Minus, Token::Asterisk, Token::Slash, Token::LessThan, Token::GreaterThan, Token::Equals, Token::NotEquals],
                 "infix operator"
             )),
 }
     }
-} 
+}
 
 impl Display for InfixOperator {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -113,6 +109,7 @@ pub enum Precedence{
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::token::Token;
     #[test]
     fn test_precedence() {
         assert!(Precedence::Lowest < Precedence::Equals);
@@ -121,7 +118,7 @@ mod tests {
         assert!(Precedence::Sum < Precedence::Product);
         assert!(Precedence::Product < Precedence::Prefix);
         assert!(Precedence::Prefix < Precedence::Call);
-    } 
+    }
 
     #[test]
     fn test_infix_operator() {
@@ -130,6 +127,7 @@ mod tests {
             expected: Result<InfixOperator, ParsingError>,
             iter_state: Option<Token>,
         }
+
         let tests = [
             //every operator
             Test {
@@ -143,7 +141,7 @@ mod tests {
                 input: vec![Token::Bang],
                 expected: Err(ParsingError::new_unexpected(
                     Some(Token::Bang).as_ref(),
-                    vec![Token::Plus, Token::Minus, Token::Asterisk, Token::Slash, 
+                    vec![Token::Plus, Token::Minus, Token::Asterisk, Token::Slash,
                         Token::LessThan, Token::GreaterThan, Token::Equals, Token::NotEquals],
                     "infix operator")),
                 iter_state: Some(Token::Bang),
@@ -154,7 +152,7 @@ mod tests {
                 input: vec![],
                 expected: Err(ParsingError::new_unexpected(
                     None,
-                    vec![Token::Plus, Token::Minus, Token::Asterisk, Token::Slash, 
+                    vec![Token::Plus, Token::Minus, Token::Asterisk, Token::Slash,
                         Token::LessThan, Token::GreaterThan, Token::Equals, Token::NotEquals],
                     "infix operator")),
                 iter_state: None,

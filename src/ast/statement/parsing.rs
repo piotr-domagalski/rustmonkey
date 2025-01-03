@@ -1,5 +1,4 @@
 use std::iter::Peekable;
-use std::fmt::{Display, Formatter};
 use crate::token::Token;
 use crate::ast::{
     TokenIter,
@@ -29,7 +28,7 @@ impl Statement {
         if iter.next_if_eq(&Token::Assign).is_none() { return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::Assign], "let statement")); }
         let expression = Expression::parse(iter)?;
         if iter.next_if_eq(&Token::Semicolon).is_none() { return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::Semicolon], "let statement")); }
-    
+
         Ok(Statement::new_let(identifier, expression))
     }
 
@@ -56,7 +55,7 @@ impl Statement {
 
 impl BlockStatement {
     pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<BlockStatement, ParsingError> {
-        if (iter.next_if_eq(&Token::LeftCurly).is_none()) { return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::LeftCurly], "block statement")); };
+        if iter.next_if_eq(&Token::LeftCurly).is_none() { return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::LeftCurly], "block statement")); };
         let mut statements = vec![];
         let mut errors = vec![];
         loop {

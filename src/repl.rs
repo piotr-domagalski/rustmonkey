@@ -2,7 +2,6 @@ use text_io::read;
 use crate::lexer::Lexer;
 use crate::ast::Statement;
 
-#[allow(unused_must_use)]
 pub fn start() {
     loop {
         print!(">>> ");
@@ -16,4 +15,4 @@ pub fn start() {
             Err(err) => { println!("{}", err); },
         }
     }
-} 
+}

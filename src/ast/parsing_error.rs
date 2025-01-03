@@ -1,4 +1,5 @@
 use crate::token::Token;
+use std::fmt::{Display, Formatter};
 
 #[derive(PartialEq, Eq, Debug)]
 pub enum ParsingError {
@@ -14,6 +15,7 @@ pub enum ParsingError {
         message: String
     }
 }
+
 //builders
 impl ParsingError {
     pub fn new_unexpected(got: Option<&Token>, expected: Vec<Token>, parsing_what: &str) -> ParsingError {
@@ -25,9 +27,7 @@ impl ParsingError {
     }
     pub fn new_multiple(errors: Vec<ParsingError>) -> ParsingError {
         ParsingError::MultipleErrors { errors }
-
     }
-
     pub fn new_other(message: &str) -> ParsingError {
         ParsingError::OtherError { message: message.to_string() }
     }
@@ -38,7 +38,6 @@ impl From<&str> for ParsingError {
     fn from(message: &str) -> Self {
         ParsingError::new_other(message)
     }
-
 }
 impl From<Vec<&str>> for ParsingError {
     fn from(errors: Vec<&str>) -> Self {
@@ -72,7 +71,7 @@ impl ParsingError {
             1 => vec_token[0].to_string(),
             _ => {
                 vec_token.iter()
-                    .map(|tok| {let mut newtok = tok.to_string(); newtok})
+                    .map(|tok| tok.to_string())
                     .collect::<Vec<String>>()
                     .join(", ")
             }
@@ -80,7 +79,6 @@ impl ParsingError {
     }
 }
 
-use std::fmt::{Display, Formatter};
 impl Display for ParsingError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -116,7 +114,7 @@ mod tests {
         struct Test {
             input: Option<Token>,
             expected: String
-        };
+        }
         let tests = [
             Test {
                 input: Option::Some(Token::Bang),
@@ -138,7 +136,7 @@ mod tests {
         struct Test {
             input: Vec<Token>,
             expected: String
-        };
+        }
 
         let tests = [
             Test {
@@ -165,7 +163,7 @@ mod tests {
         struct Test {
             input: ParsingError,
             expected: String,
-        };
+        }
 
         let tests = [
             //unexpected: got - None and Some, expected - empty, 1, 3
@@ -199,7 +197,7 @@ mod tests {
                     ParsingError::display_option_token(&Some(Token::Bang)),
                     ParsingError::display_vec_token(&vec![])),
             },
-            
+
             //multiple errors
             Test {
                 input: ParsingError::new_multiple(vec![]),
@@ -209,8 +207,7 @@ mod tests {
                 input: ParsingError::new_multiple(vec![
                     ParsingError::new_unexpected(Some(&Token::Bang), vec![Token::Equals, Token::NotEquals], "test5"),
                 ]),
-                expected: format!(r#"Multiple errors - len={}
-{}"#,
+                expected: format!("Multiple errors - len={}\n{}",
                     1,
                     ParsingError::new_unexpected(Some(&Token::Bang), vec![Token::Equals, Token::NotEquals], "test5")),
             },
@@ -219,9 +216,7 @@ mod tests {
                     ParsingError::new_other("some other error in test6a"),
                     ParsingError::new_unexpected(Some(&Token::LeftCurly), vec![Token::RightCurly], "test6b"),
                 ]),
-                expected: format!("Multiple errors - len={}
-{}
-{}",
+                expected: format!("Multiple errors - len={}\n{}\n{}",
                     2,
                     ParsingError::new_other("some other error in test6a"),
                     ParsingError::new_unexpected(Some(&Token::LeftCurly), vec![Token::RightCurly], "test6b")),
@@ -243,79 +238,3 @@ mod tests {
         }
     }
 }
-/*
- --------------------- expected something specific ---------------
---
-ast/statement.rs-53-    fn parse_let_statement<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Statement, &'static str> {
-ast/statement.rs:54:        if iter.next_if_eq(&Token::Let).is_none() { return Err("let keyword expected"); };
-ast/statement.rs-55-        let identifier = IdentifierExpression::parse(iter)?;
-ast/statement.rs:56:        if iter.next_if_eq(&Token::Assign).is_none() { return Err("assignment operator expected"); };
-ast/statement.rs-57-        let expression = Expression::parse(iter)?;
-ast/statement.rs:58:        if iter.next_if_eq(&Token::Semicolon).is_none() { return Err("semicolon expected")};
-ast/statement.rs-59-    
---
-ast/statement.rs-64-    {
-ast/statement.rs:65:        if iter.next_if_eq(&Token::Return).is_none() { return Err("return keyword expected"); };
-ast/statement.rs-66-        let expression = Expression::parse(iter)?;
-ast/statement.rs:67:        if iter.next_if_eq(&Token::Semicolon).is_none() { return Err("semicolon expected")};
-ast/statement.rs-68-
---
-ast/expression/operators.rs-17-            Token::Bang => Ok(Negation),
-ast/expression/operators.rs:18:            _ => Err("Expected ! or - operator"),
-ast/expression/operators.rs-19-        }
---
---
-ast/expression.rs-128-            },
-ast/expression.rs:129:            _ => Err("expected identifier token"),
-ast/expression.rs-130-        }
---
-ast/expression.rs-168-            _ => 
-ast/expression.rs:169:                Err("expected integer literal token"),
-ast/expression.rs-170-        }
-
- --------------------- other ---------------
-ast/statement.rs-43-        match iter.peek() {
-ast/statement.rs:44:            None => Err("EOF"),
-ast/statement.rs-45-            Some(Token::Let) => Self::parse_let_statement(iter),
---
-ast/statement.rs-47-            _ => Self::parse_expression_statement(iter),
-ast/statement.rs:48:            // TODO: Should this be a wildcard? should there be an Err("unimplemented statement type")?
-ast/statement.rs-49-        }
-
-
- -------- expected many options -------
-ast/expression/operators.rs-70-            Token::NotEquals => Ok(NotEquals),
-ast/expression/operators.rs:71:            _ => Err("invalid operator"),
-ast/expression/operators.rs-72-        }
---
-ast/expression.rs-53-            Some(Token::Bang) | Some(Token::Minus) => Expression::parse_prefix_expression(iter)?,
-ast/expression.rs:54:            _ => return Err("unimplemented expression type")
-ast/expression.rs-55-        };
-
-------- multiple errors ------
-ast/program.rs-36-        else {
-ast/program.rs:37:            Err(errors)
-ast/program.rs-38-        }
-
- --------------------- will go away after cleanup ---------------
---
-ast/expression.rs-78-            Some(token) => PrefixOperator::parse(&token)?,
-ast/expression.rs:79:            None => return Err("unexpected EOF"),
-ast/expression.rs-80-        };
-
---
-ast/expression.rs-91-        } else {
-ast/expression.rs:92:            Err("expected operator token")
-ast/expression.rs-93-        } 
-
- --------------------- not parsingerrors ---------------
---
-ast/expression.rs-62-                        Ok(op) => op.precedence(),
-ast/expression.rs:63:                        Err(_) => Precedence::Lowest,
-ast/expression.rs-64-                    }
---
-ast/program.rs-27-                Ok(statement) => statements.push(statement),
-ast/program.rs:28:                Err("EOF") => break,
-ast/program.rs:29:                Err(error) => errors.push(error),
-ast/program.rs-30-            }
-*/

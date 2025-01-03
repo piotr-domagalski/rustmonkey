@@ -51,7 +51,6 @@ impl Expression {
                 },
             }
         }
-        Ok(left)
     }
 
     fn parse_prefix_expression<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Expression, ParsingError> {
@@ -68,9 +67,9 @@ impl Expression {
     }
 
     fn parse_grouped_expression<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Expression, ParsingError> {
-        if(iter.next_if_eq(&Token::LeftRound).is_none()) { return Err(ParsingError::new_other("missing opening parenthesis")); };
+        if iter.next_if_eq(&Token::LeftRound).is_none() { return Err(ParsingError::new_other("missing opening parenthesis")); };
         let out = Expression::parse_with_precedence(iter, Precedence::Lowest)?;
-        if(iter.next_if_eq(&Token::RightRound).is_none()) { return Err(ParsingError::new_other("unclosed parenthesis")); };
+        if iter.next_if_eq(&Token::RightRound).is_none() { return Err(ParsingError::new_other("unclosed parenthesis")); };
         return Ok(out);
     }
 
@@ -84,7 +83,7 @@ impl Expression {
             other => { return Err(ParsingError::new_unexpected(other, vec![Token::LeftRound], "if expression")); },
         }
 
-        let mut condition = Expression::parse_grouped_expression(iter)?;
+        let condition = Expression::parse_grouped_expression(iter)?;
         let consequence = BlockStatement::parse(iter)?;
         let alternative = match iter.peek() {
             Some(Token::Else) => {
@@ -118,8 +117,6 @@ impl Expression {
                 }
             }
         }
-        //args
-        //
         Ok(Expression::new_call(left, args))
     }
 }
@@ -132,6 +129,7 @@ impl IdentifierExpression {
                 iter.next();
                 Ok(IdentifierExpression { identifier: ident })
             },
+            //TODO: fix this once there are proper token markers
             _ => Err(ParsingError::new_unexpected(iter.peek(), vec![Token::Identifier("".to_string())], "identifier expression")),
         }
     }
@@ -163,10 +161,10 @@ impl Literal {
     }
 
     fn parse_fn_literal<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Literal, ParsingError> {
-        if (iter.next_if_eq(&Token::Function).is_none()) {
+        if iter.next_if_eq(&Token::Function).is_none() {
             return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::Function], "function literal"));
         }
-        if (iter.next_if_eq(&Token::LeftRound).is_none()) {
+        if iter.next_if_eq(&Token::LeftRound).is_none() {
             return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::LeftRound], "function literal"));
         }
         let mut parameters = vec![];

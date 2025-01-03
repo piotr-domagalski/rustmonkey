@@ -6,9 +6,9 @@ impl Display for Expression {
         match &self {
             Expression::Identifier{identifier_expression} =>
                 write!(f, "{}", identifier_expression),
-            Expression::Literal{literal} => 
+            Expression::Literal{literal} =>
                 write!(f, "{}", literal),
-            Expression::Prefix{operator, expression} => 
+            Expression::Prefix{operator, expression} =>
                 write!(f, "({}{})", operator, expression),
             Expression::Infix{operator, left, right} =>
                 write!(f, "({} {} {})", left, operator, right),

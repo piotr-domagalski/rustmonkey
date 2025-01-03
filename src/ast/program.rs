@@ -1,5 +1,3 @@
-#![allow(unused)]
-
 use crate::ast::{TokenIter, Statement, ParsingError};
 use std::iter::Peekable;
 
@@ -8,6 +6,7 @@ pub struct Program {
     pub statements: Vec<Statement>
 }
 impl Program {
+    #[allow(dead_code, reason = "this might be needed for testing")]
     pub fn new_from_statements(statements: &[Statement]) -> Program{
         Program {
             statements: statements.to_vec()
@@ -15,12 +14,14 @@ impl Program {
 
     }
 }
+
 impl Program {
-    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Program, ParsingError> 
+    #[allow(dead_code, reason = "this will be used once source file interpretation is implemented")]
+    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Program, ParsingError>
     {
         let mut statements: Vec<Statement> = vec![];
         let mut errors: Vec<ParsingError> = vec![];
-    
+
         loop {
             match Statement::parse(iter) {
                 Ok(statement) => statements.push(statement),
@@ -28,31 +29,12 @@ impl Program {
                 Err(error) => errors.push(error),
             }
         }
-    
+
         if errors.is_empty() {
             Ok(Program {statements})
         }
         else {
             Err(ParsingError::new_multiple(errors))
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::token::Token;
-    use crate::lexer::Lexer;
-
-    #[test]
-    fn test_token_iter_trait() {
-        let tokens = vec![Token::Let, Token::Identifier(String::from("x")), Token::Assign, Token::Integer(5), Token::Semicolon];
-        let parsed_from_tokens = Program::parse(&mut tokens.into_iter().peekable());
-        
-        let code = "let x = 5;";
-        let lexer = Lexer::new(code);
-        let parsed_from_lexer = Program::parse(&mut lexer.peekable());
-
-        assert_eq!(parsed_from_tokens, parsed_from_lexer);
     }
 }

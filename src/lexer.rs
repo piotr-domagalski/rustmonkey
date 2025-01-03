@@ -1,5 +1,4 @@
 use crate::token::*;
-
 use std::str::Chars;
 use std::iter::Peekable;
 
@@ -18,7 +17,7 @@ impl<'a> Lexer<'a> {
         while self.input.next_if(|ch| ch.is_whitespace()).is_some() {};
     }
 
-    fn collect_matching_to_string<F>(&mut self, ch: char, mut p: F) -> String 
+    fn collect_matching_to_string<F>(&mut self, ch: char, mut p: F) -> String
     where
         F: FnMut(&char) -> bool
     {
@@ -31,7 +30,7 @@ impl<'a> Lexer<'a> {
 
 impl Iterator for Lexer<'_> {
     type Item = Token;
-    
+
     fn next(&mut self) -> Option<Self::Item>{
         self.eat_whitespace();
 
@@ -131,46 +130,26 @@ let add = fn(x, y) {
 x + y;
 };
 let result = add(five, ten);";
-        
+
         let mut lexer = Lexer::new(input);
 
         let output = [
-            Some(Token::Let),
-            Some(Token::Identifier(String::from("five"))),
-            Some(Token::Assign),
-            Some(Token::Integer(5)),
-            Some(Token::Semicolon),
-            Some(Token::Let),
-            Some(Token::Identifier(String::from("ten"))),
-            Some(Token::Assign),
-            Some(Token::Integer(10)),
-            Some(Token::Semicolon),
-            Some(Token::Let),
-            Some(Token::Identifier(String::from("add"))),
-            Some(Token::Assign),
-            Some(Token::Function),
+            Some(Token::Let), Some(Token::Identifier(String::from("five"))), Some(Token::Assign), Some(Token::Integer(5)), Some(Token::Semicolon),
+            Some(Token::Let), Some(Token::Identifier(String::from("ten"))), Some(Token::Assign), Some(Token::Integer(10)), Some(Token::Semicolon),
+            Some(Token::Let), Some(Token::Identifier(String::from("add"))), Some(Token::Assign), Some(Token::Function),
             Some(Token::LeftRound),
-            Some(Token::Identifier(String::from("x"))),
-            Some(Token::Comma),
-            Some(Token::Identifier(String::from("y"))),
+                Some(Token::Identifier(String::from("x"))), Some(Token::Comma),
+                Some(Token::Identifier(String::from("y"))),
             Some(Token::RightRound),
             Some(Token::LeftCurly),
-            Some(Token::Identifier(String::from("x"))),
-            Some(Token::Plus),
-            Some(Token::Identifier(String::from("y"))),
-            Some(Token::Semicolon),
-            Some(Token::RightCurly),
-            Some(Token::Semicolon),
-            Some(Token::Let),
-            Some(Token::Identifier(String::from("result"))),
-            Some(Token::Assign),
-            Some(Token::Identifier(String::from("add"))),
-            Some(Token::LeftRound),
-            Some(Token::Identifier(String::from("five"))),
-            Some(Token::Comma),
-            Some(Token::Identifier(String::from("ten"))),
-            Some(Token::RightRound),
-            Some(Token::Semicolon),
+                Some(Token::Identifier(String::from("x"))), Some(Token::Plus), Some(Token::Identifier(String::from("y"))), Some(Token::Semicolon),
+            Some(Token::RightCurly), Some(Token::Semicolon),
+
+            Some(Token::Let), Some(Token::Identifier(String::from("result"))), Some(Token::Assign),
+            Some(Token::Identifier(String::from("add"))), Some(Token::LeftRound),
+                Some(Token::Identifier(String::from("five"))), Some(Token::Comma),
+                Some(Token::Identifier(String::from("ten"))),
+            Some(Token::RightRound), Some(Token::Semicolon),
             None,
         ];
 
@@ -190,7 +169,7 @@ return false;
 }
 10 == 10;
 10 != 9;";
-        
+
         let mut lexer = Lexer::new(input);
 
         let output = [
@@ -208,37 +187,16 @@ return false;
             Some(Token::Integer(5)),
             Some(Token::Semicolon),
 
-            Some(Token::If),
-            Some(Token::LeftRound),
-            Some(Token::Integer(5)),
-            Some(Token::LessThan),
-            Some(Token::Integer(10)),
-            Some(Token::RightRound),
-            Some(Token::LeftCurly),
-
-            Some(Token::Return),
-            Some(Token::Bool(true)),
-            Some(Token::Semicolon),
-
-            Some(Token::RightCurly),
-            Some(Token::Else),
-            Some(Token::LeftCurly),
-
-            Some(Token::Return),
-            Some(Token::Bool(false)),
-            Some(Token::Semicolon),
-
+            Some(Token::If), Some(Token::LeftRound),
+                Some(Token::Integer(5)), Some(Token::LessThan), Some(Token::Integer(10)),
+            Some(Token::RightRound), Some(Token::LeftCurly),
+                Some(Token::Return), Some(Token::Bool(true)), Some(Token::Semicolon),
+            Some(Token::RightCurly), Some(Token::Else), Some(Token::LeftCurly),
+                Some(Token::Return), Some(Token::Bool(false)), Some(Token::Semicolon),
             Some(Token::RightCurly),
 
-            Some(Token::Integer(10)),
-            Some(Token::Equals),
-            Some(Token::Integer(10)),
-            Some(Token::Semicolon),
-
-            Some(Token::Integer(10)),
-            Some(Token::NotEquals),
-            Some(Token::Integer(9)),
-            Some(Token::Semicolon),
+            Some(Token::Integer(10)), Some(Token::Equals), Some(Token::Integer(10)), Some(Token::Semicolon),
+            Some(Token::Integer(10)), Some(Token::NotEquals), Some(Token::Integer(9)), Some(Token::Semicolon),
 
             None,
         ];

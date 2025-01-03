@@ -1,6 +1,8 @@
 #![cfg(test)]
 use super::*;
 use crate::token::Token;
+use crate::ast::ParsingError;
+use crate::ast::expression::{IdentifierExpression, InfixOperator};
 
 #[test]
 fn test_statements() {
@@ -184,8 +186,6 @@ fn test_return_statements() {
         assert_eq!(iterator.next(), next_tok);
     }
 }
-
-use crate::ast::expression::{IdentifierExpression, InfixOperator};
 
 #[test]
 fn test_block_statement() {

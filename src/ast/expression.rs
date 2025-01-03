@@ -1,17 +1,9 @@
-#![allow(unused)]
-
-use crate::token::Token;
-use crate::ast::TokenIter;
-use crate::ast::ParsingError;
-use std::iter::Peekable;
-use std::fmt::{Formatter, Display};
 use crate::ast::BlockStatement;
 
 mod parsing;
-pub use parsing::*;
 mod display;
-pub use display::*;
 mod operators;
+mod tests;
 pub use operators::*;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -26,6 +18,7 @@ pub enum Expression {
 
 //builders
 impl Expression {
+    #![allow(dead_code, reason = "these are used only in the test profile")]
     pub fn new_ident(identifier: &str) -> Expression{
         Expression::Identifier { identifier_expression: IdentifierExpression::new(identifier) }
     }
