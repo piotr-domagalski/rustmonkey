@@ -9,6 +9,8 @@ use crate::ast::{
     BlockStatement,
 };
 
+use super::parsing_what_consts::*;
+
 //parsing
 impl Statement {
     pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Statement, ParsingError>
@@ -23,20 +25,20 @@ impl Statement {
     }
 
     fn parse_let_statement<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Statement, ParsingError> {
-        next_if_eq_else_return_err!(iter, Token::Let, "let statement", unexpected);
+        next_if_eq_else_return_err!(iter, Token::Let, PARSING_WHAT_LET_STMT, unexpected);
         let identifier = IdentifierExpression::parse(iter)?;
-        next_if_eq_else_return_err!(iter, Token::Assign, "let statement", unexpected);
+        next_if_eq_else_return_err!(iter, Token::Assign, PARSING_WHAT_LET_STMT, unexpected);
         let expression = Expression::parse(iter)?;
-        next_if_eq_else_return_err!(iter, Token::Semicolon, "let statement", unexpected);
+        next_if_eq_else_return_err!(iter, Token::Semicolon, PARSING_WHAT_LET_STMT, unexpected);
 
         Ok(Statement::new_let(identifier, expression))
     }
 
     fn parse_return_statement<I: TokenIter> (iter: &mut Peekable<I>) -> Result<Statement, ParsingError>
     {
-        next_if_eq_else_return_err!(iter, Token::Return, "return statement", unexpected);
+        next_if_eq_else_return_err!(iter, Token::Return, PARSING_WHAT_RETURN_STMT, unexpected);
         let expression = Expression::parse(iter)?;
-        next_if_eq_else_return_err!(iter, Token::Semicolon, "return statement", unexpected);
+        next_if_eq_else_return_err!(iter, Token::Semicolon, PARSING_WHAT_RETURN_STMT, unexpected);
 
         Ok(Statement::new_return(expression))
     }
@@ -55,7 +57,7 @@ impl Statement {
 
 impl BlockStatement {
     pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<BlockStatement, ParsingError> {
-        next_if_eq_else_return_err!(iter, Token::LeftCurly, "block statement", unexpected);
+        next_if_eq_else_return_err!(iter, Token::LeftCurly, PARSING_WHAT_BLOCK_STMT, unexpected);
         let mut statements = vec![];
         let mut errors = vec![];
         loop {

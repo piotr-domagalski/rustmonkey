@@ -1,5 +1,7 @@
 #![cfg(test)]
 use super::*;
+use super::parsing_error_consts::*;
+
 use crate::token::Token;
 use crate::ast::ParsingError;
 

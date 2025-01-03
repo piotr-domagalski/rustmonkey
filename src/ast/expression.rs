@@ -1,5 +1,16 @@
 use crate::ast::BlockStatement;
 
+//parsing error constants
+mod parsing_error_consts {
+ pub const PARSING_WHAT_CALL_EXPR: &str = "call expression";
+ pub const PARSING_WHAT_EXPR: &str = "expression";
+ pub const PARSING_WHAT_FN_LIT: &str = "function literal";
+ pub const PARSING_WHAT_GROUP_EXPR: &str = "grouped expression";
+ pub const PARSING_WHAT_IDENT_EXPR: &str = "identifier expression";
+ pub const PARSING_WHAT_IF_EXPR: &str = "if expression";
+ pub const PARSING_WHAT_LIT_EXPR: &str = "literal";
+}
+
 mod parsing;
 mod display;
 mod operators;
