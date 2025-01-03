@@ -10,6 +10,11 @@ pub enum Token {
     Integer(i64),
     Bool(bool),
 
+    //marker variants for errors
+    AnIdentifier,
+    AnInteger,
+    ABool,
+
     //operators
     Assign,
     Plus,
@@ -49,16 +54,17 @@ impl Display for Token {
             Token::Illegal(string) => format!("illegal token ({})", string),
 
             Token::Identifier(string) => {
-                if string.len() == 0 {
-                    "an identifier".to_string()
-                } else {
-                    format!("identifier (\"{}\")", string)
-                }
+                format!("identifier (\"{}\")", string)
             },
+            Token::AnIdentifier => {
+                "an identifier".to_string()
+            }
 
             //literals
-            Token::Integer(_integer) => "integer".to_string(), //TODO: make these display the value
-            Token::Bool(_bool) => "boolean".to_string(),
+            Token::Integer(int) => format!("integer ({})", int),
+            Token::AnInteger => "an integer".to_string(),
+            Token::Bool(bool) => format!("boolean ({})", bool),
+            Token::ABool => "a boolean".to_string(),
 
             //operators
             Token::Assign => "=".to_string(),
@@ -113,50 +119,39 @@ mod tests {
                 input: Token::Illegal("message1".to_string()),
                 expected: "illegal token (message1)".to_string(),
             },
+
             //identifier
-            // TODO: convert Identifier(String) with special value to Identifier(Option<String>)
-            // (18 compile errors)
             Test {
                 input: Token::Identifier("foobar".to_string()),
                 expected: "identifier (\"foobar\")".to_string(),
             },
             Test {
-                input: Token::Identifier("".to_string()),
+                input: Token::AnIdentifier,
                 expected: "an identifier".to_string(),
             },
+
             //integer
-            // TODO: convert Integer(u64) to Integer(Option<u64>)
-            // (28 compile errors)
             Test {
                 input: Token::Integer(12),
-                expected: "integer".to_string(),
-                //expected: "integer literal (12)".to_string(),
+                expected: "integer (12)".to_string(),
             },
             Test {
                 input: Token::Integer(-3),
-                expected: "integer".to_string(),
-                //expected: "integer literal (-3)".to_string(),
+                expected: "integer (-3)".to_string(),
             },
-            /*
             Test {
-                input: Token::Integer(None),
-                expected: "an integer literal".to_string(),
+                input: Token::AnInteger,
+                expected: "an integer".to_string(),
             },
-            */
-            //bool
-            // TODO: convert Bool(bool) to Bool(Option<bool>)
-            // (6 compile errors)
+
             Test {
                 input: Token::Bool(true),
-                expected: "boolean".to_string(),
-                //expected: "boolean literal (true)".to_string(),
+                expected: "boolean (true)".to_string(),
             },
-            /*
             Test {
-                input: Token::Bool(None),
-                expected: "a boolean literal".to_string()
-            }
-            */
+                input: Token::ABool,
+                expected: "a boolean".to_string()
+            },
 
             //some others
             Test {

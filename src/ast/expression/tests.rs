@@ -100,7 +100,7 @@ fn test_literal_expression() {
             tokens: vec![Token::Function, Token::LeftRound,
                     Token::Identifier("x".to_string()), Token::Comma,
                     Token::Identifier("y".to_string()), Token::Comma,
-                    Token::Identifier("z".to_string()), Token::Comma, //TODO:this shouldn't pass
+                    Token::Identifier("z".to_string()),
                 Token::RightRound,
                 Token::LeftCurly, Token::RightCurly, Token::Semicolon
             ],
@@ -118,6 +118,16 @@ fn test_literal_expression() {
                 ).expect("hardcoded tokens shouldn't fail to parse")
             )),
             next_tok: Some(Token::Semicolon),
+        },
+
+        Test {
+            tokens: vec![Token::Function, Token::LeftRound,
+                    Token::Identifier("x".to_string()), Token::Comma,
+                Token::RightRound,
+                Token::LeftCurly, Token::RightCurly, Token::Semicolon
+            ],
+            expected: Err(ParsingError::new_unexpected(Some(&Token::RightRound), vec![Token::AnIdentifier], PARSING_WHAT_FN_LIT)),
+            next_tok: Some(Token::LeftCurly),
         },
     ];
 
