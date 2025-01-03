@@ -23,20 +23,20 @@ impl Statement {
     }
 
     fn parse_let_statement<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Statement, ParsingError> {
-        if iter.next_if_eq(&Token::Let).is_none() { return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::Let], "let statement")); }
+        next_if_eq_else_return_err!(iter, Token::Let, "let statement", unexpected);
         let identifier = IdentifierExpression::parse(iter)?;
-        if iter.next_if_eq(&Token::Assign).is_none() { return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::Assign], "let statement")); }
+        next_if_eq_else_return_err!(iter, Token::Assign, "let statement", unexpected);
         let expression = Expression::parse(iter)?;
-        if iter.next_if_eq(&Token::Semicolon).is_none() { return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::Semicolon], "let statement")); }
+        next_if_eq_else_return_err!(iter, Token::Semicolon, "let statement", unexpected);
 
         Ok(Statement::new_let(identifier, expression))
     }
 
     fn parse_return_statement<I: TokenIter> (iter: &mut Peekable<I>) -> Result<Statement, ParsingError>
     {
-        if iter.next_if_eq(&Token::Return).is_none() { return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::Return], "return statement")); }
+        next_if_eq_else_return_err!(iter, Token::Return, "return statement", unexpected);
         let expression = Expression::parse(iter)?;
-        if iter.next_if_eq(&Token::Semicolon).is_none() { return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::Semicolon], "return statement")); };
+        next_if_eq_else_return_err!(iter, Token::Semicolon, "return statement", unexpected);
 
         Ok(Statement::new_return(expression))
     }
@@ -55,7 +55,7 @@ impl Statement {
 
 impl BlockStatement {
     pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<BlockStatement, ParsingError> {
-        if iter.next_if_eq(&Token::LeftCurly).is_none() { return Err(ParsingError::new_unexpected(iter.peek(), vec![Token::LeftCurly], "block statement")); };
+        next_if_eq_else_return_err!(iter, Token::LeftCurly, "block statement", unexpected);
         let mut statements = vec![];
         let mut errors = vec![];
         loop {

@@ -3,6 +3,24 @@ use crate::token::Token;
 pub trait TokenIter: Iterator<Item = Token> {}
 impl<T: Iterator<Item = Token>> TokenIter for T {}
 
+macro_rules! next_if_eq_else_return_err {
+    ( $iter:ident, $tok:expr, $parsing_what:expr, unexpected ) => {
+        if $iter.next_if_eq( &$tok ).is_none() { return Err(ParsingError::new_unexpected($iter.peek(), vec![$tok], $parsing_what)); }
+    };
+    ( $iter:ident, $tok:expr, $parsing_what:expr, other, $message:expr ) => {
+        if $iter.next_if_eq( &$tok ).is_none() { return Err(ParsingError::new_other($message)); }
+    };
+}
+
+macro_rules! peek_if_eq_else_return_err {
+    ( $iter:ident, $tok:expr, $parsing_what:expr, unexpected ) => {
+        if $iter.peek() != Some(&$tok ) { return Err(ParsingError::new_unexpected($iter.peek(), vec![$tok], $parsing_what)); }
+    };
+    ( $iter:ident, $tok:expr, $parsing_what:expr, other, $message: expr ) => {
+        if $iter.peek() != Some(&$tok ) { return Err(ParsingError::new_other($message)); }
+    };
+}
+
 mod program;
 mod statement;
 mod expression;
