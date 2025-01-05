@@ -41,7 +41,7 @@ mod tests {
     #[test]
     fn test_token_iter_trait() {
         let code = "let x = 5;";
-        let tokens = vec![Token::Let, Token::Identifier(String::from("x")), Token::Assign, Token::Integer(5), Token::Semicolon];
+        let tokens = vec![Token::Let, Token::new_ident("x"), Token::Assign, Token::new_int(5), Token::Semicolon];
 
         let lexer = Lexer::new(code);
         let parsed_from_lexer = Program::parse(&mut lexer.peekable());

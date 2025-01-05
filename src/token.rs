@@ -48,6 +48,19 @@ pub enum Token {
     Return,
 }
 
+impl Token {
+    pub fn new_ident(ident: &str) -> Token {
+        Token::Identifier(ident.to_string())
+    }
+    pub fn new_int(int: i64) -> Token {
+        Token::Integer(int)
+    }
+    pub fn new_bool(b: bool) -> Token {
+        Token::Bool(b)
+    }
+
+}
+
 impl Display for Token {
     fn fmt (&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let str = match self {
@@ -122,7 +135,7 @@ mod tests {
 
             //identifier
             Test {
-                input: Token::Identifier("foobar".to_string()),
+                input: Token::new_ident("foobar"),
                 expected: "identifier (\"foobar\")".to_string(),
             },
             Test {
@@ -132,11 +145,11 @@ mod tests {
 
             //integer
             Test {
-                input: Token::Integer(12),
+                input: Token::new_int(12),
                 expected: "integer (12)".to_string(),
             },
             Test {
-                input: Token::Integer(-3),
+                input: Token::new_int(-3),
                 expected: "integer (-3)".to_string(),
             },
             Test {
@@ -145,7 +158,7 @@ mod tests {
             },
 
             Test {
-                input: Token::Bool(true),
+                input: Token::new_bool(true),
                 expected: "boolean (true)".to_string(),
             },
             Test {

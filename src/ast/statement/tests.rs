@@ -21,9 +21,9 @@ fn test_statements() {
         Input {
             tokens: vec![
                 Token::Let,
-                Token::Identifier(String::from("x")),
+                Token::new_ident("x"),
                 Token::Assign,
-                Token::Integer(5),
+                Token::new_int(5),
                 Token::Semicolon,
             ],
             expected: Ok(Statement::new_let(IdentifierExpression::new("x"), Expression::new_int(5))),
@@ -33,7 +33,7 @@ fn test_statements() {
         Input {
             tokens: vec![
                 Token::Return,
-                Token::Integer(5),
+                Token::new_int(5),
                 Token::Semicolon,
             ],
             expected: Ok(Statement::new_return(Expression::new_int(5))),
@@ -61,9 +61,9 @@ fn test_let_statements() {
         Input {
             tokens: vec![
                 Token::Let,
-                Token::Identifier(String::from("x")),
+                Token::new_ident("x"),
                 Token::Assign,
-                Token::Integer(5),
+                Token::new_int(5),
                 Token::Semicolon,
             ],
             expected: Ok(Statement::new_let(IdentifierExpression::new("x"), Expression::new_int(5))),
@@ -73,9 +73,9 @@ fn test_let_statements() {
         Input {
             tokens: vec![
                 Token::Let,
-                Token::Identifier(String::from("y")),
+                Token::new_ident("y"),
                 Token::Assign,
-                Token::Integer(10),
+                Token::new_int(10),
                 Token::Semicolon,
             ],
             expected: Ok(Statement::new_let(IdentifierExpression::new("y"), Expression::new_int(10))),
@@ -85,9 +85,9 @@ fn test_let_statements() {
         Input {
             tokens: vec![
                 Token::Let,
-                Token::Identifier(String::from("foobar")),
+                Token::new_ident("foobar"),
                 Token::Assign,
-                Token::Integer(838383),
+                Token::new_int(838383),
                 Token::Semicolon,
             ],
             expected: Ok(Statement::new_let(IdentifierExpression::new("foobar"), Expression::new_int(838383))),
@@ -98,9 +98,9 @@ fn test_let_statements() {
         Input {
             tokens: vec![
                 Token::Let,
-                Token::Identifier(String::from("x")),
+                Token::new_ident("x"),
                 Token::Bang,
-                Token::Integer(838383),
+                Token::new_int(838383),
                 Token::Semicolon
             ],
             expected: Err(ParsingError::new_unexpected(Some(&Token::Bang), vec![Token::Assign], "let statement")),
@@ -111,9 +111,9 @@ fn test_let_statements() {
         Input {
             tokens: vec![
                 Token::Let,
-                Token::Identifier(String::from("x")),
+                Token::new_ident("x"),
                 Token::Assign,
-                Token::Integer(838383),
+                Token::new_int(838383),
             ],
             expected: Err(ParsingError::new_unexpected(None, vec![Token::Semicolon], "let statement")),
             next_tok: None,
@@ -140,7 +140,7 @@ fn test_return_statements() {
         Input {
             tokens: vec![
                 Token::Return,
-                Token::Integer(5),
+                Token::new_int(5),
                 Token::Semicolon,
             ],
             expected: Ok(Statement::new_return(Expression::new_int(5))),
@@ -150,7 +150,7 @@ fn test_return_statements() {
         Input {
             tokens: vec![
                 Token::Return,
-                Token::Integer(10),
+                Token::new_int(10),
                 Token::Semicolon,
             ],
             expected: Ok(Statement::new_return(Expression::new_int(10))),
@@ -160,7 +160,7 @@ fn test_return_statements() {
         Input {
             tokens: vec![
                 Token::Return,
-                Token::Integer(993322),
+                Token::new_int(993322),
                 Token::Semicolon,
             ],
             expected: Ok(Statement::new_return(Expression::new_int(993322))),
@@ -171,7 +171,7 @@ fn test_return_statements() {
         Input {
             tokens: vec![
                 Token::Return,
-                Token::Integer(993322),
+                Token::new_int(993322),
             ],
             expected: Err(ParsingError::new_unexpected(None, vec![Token::Semicolon], "return statement")),
             next_tok: None,
@@ -199,8 +199,8 @@ fn test_block_statement() {
         Test {
             tokens: vec![
                 Token::LeftCurly,
-                Token::Let, Token::Identifier("x".to_string()), Token::Assign, Token::Integer(5), Token::Semicolon,
-                Token::Identifier("x".to_string()), Token::LessThan, Token::Integer(3), Token::Semicolon,
+                Token::Let, Token::new_ident("x"), Token::Assign, Token::new_int(5), Token::Semicolon,
+                Token::new_ident("x"), Token::LessThan, Token::new_int(3), Token::Semicolon,
                 Token::RightCurly,
             ],
             expected: Ok(Statement::new_block(
@@ -213,7 +213,7 @@ fn test_block_statement() {
         Test {
             tokens: vec![
                 Token::LeftCurly,
-                Token::Identifier("x".to_string()), Token::LessThan, Token::Integer(3), Token::Semicolon,
+                Token::new_ident("x"), Token::LessThan, Token::new_int(3), Token::Semicolon,
                 Token::RightCurly,
             ],
             expected: Ok(Statement::new_block(
@@ -233,8 +233,8 @@ fn test_block_statement() {
         Test {
             tokens: vec![
                 Token::LeftCurly,
-                Token::Let, Token::Identifier("x".to_string()), Token::Assign, Token::Integer(5), Token::Semicolon,
-                Token::Identifier("x".to_string()), Token::LessThan, Token::Integer(3), Token::Semicolon,
+                Token::Let, Token::new_ident("x"), Token::Assign, Token::new_int(5), Token::Semicolon,
+                Token::new_ident("x"), Token::LessThan, Token::new_int(3), Token::Semicolon,
             ],
             expected: Err(ParsingError::new_other("unclosed curly brace")),
             next_tok: None,

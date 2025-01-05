@@ -179,12 +179,12 @@ mod tests {
             },
             Test {
                 input: ParsingError::new_unexpected(
-                    Some(&Token::Identifier("barbaz".to_string())),
+                    Some(&Token::new_ident("barbaz")),
                     vec![Token::Comma, Token::Semicolon],
                     "test2"),
                 expected: format!("Unexpected token while parsing {} - got: {}, expected: {}",
                     "test2",
-                    ParsingError::display_option_token(&Some(Token::Identifier("barbaz".to_string()))),
+                    ParsingError::display_option_token(&Some(Token::new_ident("barbaz"))),
                     ParsingError::display_vec_token(&vec![Token::Comma, Token::Semicolon])),
             },
             Test {

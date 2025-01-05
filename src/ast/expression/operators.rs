@@ -185,12 +185,12 @@ mod tests {
                 iter_state: Some(Token::Bang)
             },
             Test {
-                input: vec![Token::Identifier("foobaz".to_string())],
+                input: vec![Token::new_ident("foobaz")],
                 expected: Err(ParsingError::new_unexpected(
-                    Some(&Token::Identifier("foobaz".to_string())),
+                    Some(&Token::new_ident("foobaz")),
                     vec![Token::Bang, Token::Minus],
                     "prefix operator")),
-                iter_state: Some(Token::Identifier("foobaz".to_string())),
+                iter_state: Some(Token::new_ident("foobaz")),
             },
             Test {
 

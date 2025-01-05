@@ -8,7 +8,7 @@ use crate::ast::ParsingError;
 #[test]
 fn test_identifier_expression() {
     let input = [
-        Token::Identifier(String::from("foobar")),
+        Token::new_ident("foobar"),
         Token::Semicolon,
     ];
     let expected = Expression::new_ident("foobar");
@@ -30,21 +30,21 @@ fn test_literal_expression() {
 
     let tests = [
         Test {
-            tokens: vec![Token::Integer(5), Token::Semicolon],
+            tokens: vec![Token::new_int(5), Token::Semicolon],
             expected: Ok(Expression::new_int(5)),
             next_tok: Some(Token::Semicolon),
         },
         Test {
-            tokens: vec![Token::Bool(true), Token::Semicolon],
+            tokens: vec![Token::new_bool(true), Token::Semicolon],
             expected: Ok(Expression::new_bool(true)),
             next_tok: Some(Token::Semicolon),
         },
         // TODO: needs more exhaustive tests
         Test {
             tokens: vec![
-                Token::Function, Token::LeftRound, Token::Identifier("x".to_string()), Token::Comma, Token::Identifier("y".to_string()), Token::RightRound,
+                Token::Function, Token::LeftRound, Token::new_ident("x"), Token::Comma, Token::new_ident("y"), Token::RightRound,
                 Token::LeftCurly,
-                Token::Identifier("x".to_string()), Token::Plus, Token::Identifier("y".to_string()), Token::Semicolon,
+                Token::new_ident("x"), Token::Plus, Token::new_ident("y"), Token::Semicolon,
                 Token::RightCurly,
             ],
             expected: Ok(Expression::new_fn(
@@ -52,7 +52,7 @@ fn test_literal_expression() {
                 BlockStatement::parse(
                     &mut vec![
                         Token::LeftCurly,
-                        Token::Identifier("x".to_string()), Token::Plus, Token::Identifier("y".to_string()), Token::Semicolon,
+                        Token::new_ident("x"), Token::Plus, Token::new_ident("y"), Token::Semicolon,
                         Token::RightCurly
                     ].into_iter().peekable()
                 ).expect("hardcoded tokens shouldn't fail to parse")
@@ -78,7 +78,7 @@ fn test_literal_expression() {
 
         Test {
             tokens: vec![Token::Function, Token::LeftRound,
-                    Token::Identifier("x".to_string()),
+                    Token::new_ident("x"),
                 Token::RightRound,
                 Token::LeftCurly, Token::RightCurly, Token::Semicolon
             ],
@@ -98,9 +98,9 @@ fn test_literal_expression() {
 
         Test {
             tokens: vec![Token::Function, Token::LeftRound,
-                    Token::Identifier("x".to_string()), Token::Comma,
-                    Token::Identifier("y".to_string()), Token::Comma,
-                    Token::Identifier("z".to_string()),
+                    Token::new_ident("x"), Token::Comma,
+                    Token::new_ident("y"), Token::Comma,
+                    Token::new_ident("z"),
                 Token::RightRound,
                 Token::LeftCurly, Token::RightCurly, Token::Semicolon
             ],
@@ -122,7 +122,7 @@ fn test_literal_expression() {
 
         Test {
             tokens: vec![Token::Function, Token::LeftRound,
-                    Token::Identifier("x".to_string()), Token::Comma,
+                    Token::new_ident("x"), Token::Comma,
                 Token::RightRound,
                 Token::LeftCurly, Token::RightCurly, Token::Semicolon
             ],
@@ -149,11 +149,11 @@ fn test_prefix_expressions() {
 
     let tests = [
         Test {
-            tokens: [Token::Minus, Token::Integer(5), Token::Semicolon],
+            tokens: [Token::Minus, Token::new_int(5), Token::Semicolon],
             expected: Ok(Expression::new_prefix(PrefixOperator::Inverse, Expression::new_int(5))),
         },
         Test {
-            tokens: [Token::Bang, Token::Integer(15), Token::Semicolon],
+            tokens: [Token::Bang, Token::new_int(15), Token::Semicolon],
             expected: Ok(Expression::new_prefix(PrefixOperator::Negation, Expression::new_int(15))),
         },
     ];
@@ -210,7 +210,7 @@ fn test_infix_expressions() {
     ];
 
     for test in tests {
-        let tokens = [Token::Integer(5), test.token, Token::Integer(5), Token::Semicolon];
+        let tokens = [Token::new_int(5), test.token, Token::new_int(5), Token::Semicolon];
         let expected = Expression::new_infix(test.expected, Expression::new_int(5), Expression::new_int(5));
 
         let mut iterator = tokens.into_iter().peekable();
@@ -232,9 +232,9 @@ fn test_if_expressions() {
         Test {
             tokens: vec![
                 Token::If,
-                    Token::LeftRound, Token::Identifier(String::from("x")), Token::GreaterThan, Token::Identifier(String::from("y")), Token::RightRound,
+                    Token::LeftRound, Token::new_ident("x"), Token::GreaterThan, Token::new_ident("y"), Token::RightRound,
                 Token::LeftCurly,
-                    Token::Identifier(String::from("x")), Token::Semicolon,
+                    Token::new_ident("x"), Token::Semicolon,
                 Token::RightCurly,
             ],
             expected: Expression::new_if(
@@ -242,7 +242,7 @@ fn test_if_expressions() {
                 BlockStatement::parse(
                     &mut vec![
                         Token::LeftCurly,
-                            Token::Identifier(String::from("x")), Token::Semicolon,
+                            Token::new_ident("x"), Token::Semicolon,
                         Token::RightCurly,
                     ].into_iter().peekable()
                 ).expect("hardcoded tokens shouldn't fail to parse"),
@@ -254,13 +254,13 @@ fn test_if_expressions() {
         Test {
             tokens: vec![
                 Token::If,
-                    Token::LeftRound, Token::Identifier(String::from("x")), Token::GreaterThan, Token::Identifier(String::from("y")), Token::RightRound,
+                    Token::LeftRound, Token::new_ident("x"), Token::GreaterThan, Token::new_ident("y"), Token::RightRound,
                 Token::LeftCurly,
-                    Token::Identifier(String::from("x")), Token::Semicolon,
+                    Token::new_ident("x"), Token::Semicolon,
                 Token::RightCurly,
                 Token::Else,
                 Token::LeftCurly,
-                    Token::Identifier(String::from("y")), Token::Semicolon,
+                    Token::new_ident("y"), Token::Semicolon,
                 Token::RightCurly,
             ],
             expected: Expression::new_if(
@@ -268,14 +268,14 @@ fn test_if_expressions() {
                 BlockStatement::parse(
                     &mut vec![
                         Token::LeftCurly,
-                            Token::Identifier(String::from("x")), Token::Semicolon,
+                            Token::new_ident("x"), Token::Semicolon,
                         Token::RightCurly,
                     ].into_iter().peekable()
                 ).expect("hardcoded tokens shouldn't fail to parse"),
                 Some(BlockStatement::parse(
                     &mut vec![
                         Token::LeftCurly,
-                            Token::Identifier(String::from("y")), Token::Semicolon,
+                            Token::new_ident("y"), Token::Semicolon,
                         Token::RightCurly,
                     ].into_iter().peekable()
                 ).expect("hardcoded tokens shouldn't fail to parse"))
@@ -307,10 +307,10 @@ fn test_call_expressions() {
     let tests = [
         Test {
             tokens: vec![
-                Token::Identifier(String::from("add")), Token::LeftRound,
-                    Token::Integer(1), Token::Comma,
-                    Token::Integer(2), Token::Asterisk, Token::Integer(3), Token::Comma,
-                    Token::Integer(4), Token::Plus, Token::Integer(5), Token::Comma,
+                Token::new_ident("add"), Token::LeftRound,
+                    Token::new_int(1), Token::Comma,
+                    Token::new_int(2), Token::Asterisk, Token::new_int(3), Token::Comma,
+                    Token::new_int(4), Token::Plus, Token::new_int(5), Token::Comma,
                 Token::RightRound,
                 Token::Semicolon
             ],
