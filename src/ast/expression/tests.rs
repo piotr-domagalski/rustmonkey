@@ -459,40 +459,40 @@ fn test_complex_expressions() {
 
         Test {
             input: "(1 + 2 + 1",
-            expected: Err(ParsingError::new_other("unclosed parenthesis")),
+            expected: Err(ParsingError::new_other("unclosed parenthesis", PARSING_WHAT_GROUP_EXPR)),
         },
         Test {
             input: "1 + (2 + 2",
-            expected: Err(ParsingError::new_other("unclosed parenthesis")),
+            expected: Err(ParsingError::new_other("unclosed parenthesis", PARSING_WHAT_GROUP_EXPR)),
         },
         Test {
             input: "((1 + 2) + 3 ",
-            expected: Err(ParsingError::new_other("unclosed parenthesis")),
+            expected: Err(ParsingError::new_other("unclosed parenthesis", PARSING_WHAT_GROUP_EXPR)),
         },
         Test {
             input: "1 + ((2 + 3) + 4 ",
-            expected: Err(ParsingError::new_other("unclosed parenthesis")),
+            expected: Err(ParsingError::new_other("unclosed parenthesis", PARSING_WHAT_GROUP_EXPR)),
         },
 
         Test {
             input: "1 + 2) * 6",
-            expected: Err(ParsingError::new_other("missing opening parenthesis")),
+            expected: Err(ParsingError::new_other("missing opening parenthesis", PARSING_WHAT_EXPR)),
         },
         Test {
             input: "1 + 2 * 6)",
-            expected: Err(ParsingError::new_other("missing opening parenthesis")),
+            expected: Err(ParsingError::new_other("missing opening parenthesis", PARSING_WHAT_EXPR)),
         },
         Test {
             input: "(1) + 2) * 4",
-            expected: Err(ParsingError::new_other("missing opening parenthesis")),
+            expected: Err(ParsingError::new_other("missing opening parenthesis", PARSING_WHAT_EXPR)),
         },
         Test {
             input: "(1 + 2)) * 5",
-            expected: Err(ParsingError::new_other("missing opening parenthesis")),
+            expected: Err(ParsingError::new_other("missing opening parenthesis", PARSING_WHAT_EXPR)),
         },
         Test {
             input: "(1 + 2 * 6))",
-            expected: Err(ParsingError::new_other("missing opening parenthesis")),
+            expected: Err(ParsingError::new_other("missing opening parenthesis", PARSING_WHAT_EXPR)),
         },
 
         Test {

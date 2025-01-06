@@ -20,7 +20,7 @@ impl Expression {
         let expr = Self::parse_with_precedence(iter, Precedence::Lowest)?;
         match iter.peek() {
             Some(Token::Semicolon | Token::RightCurly | Token::Comma) | None => Ok(expr),
-            Some(Token::RightRound) => Err(ParsingError::new_other("missing opening parenthesis")),
+            Some(Token::RightRound) => Err(ParsingError::new_other("missing opening parenthesis", PARSING_WHAT_EXPR)),
             _ => panic!("parse_with_precedence should never leave the lexer at a token other than ;, ), or None")
         }
     }

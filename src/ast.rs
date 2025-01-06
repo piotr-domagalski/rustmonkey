@@ -8,7 +8,7 @@ macro_rules! next_if_eq_else_return_err {
         if $iter.next_if_eq( &$tok ).is_none() { return Err(ParsingError::new_unexpected($iter.peek(), vec![$tok], $parsing_what)); }
     };
     ( $iter:ident, $tok:expr, $parsing_what:expr, other, $message:expr ) => {
-        if $iter.next_if_eq( &$tok ).is_none() { return Err(ParsingError::new_other($message)); }
+        if $iter.next_if_eq( &$tok ).is_none() { return Err(ParsingError::new_other($message, $parsing_what)); }
     };
 }
 
@@ -17,7 +17,7 @@ macro_rules! peek_if_eq_else_return_err {
         if $iter.peek() != Some(&$tok ) { return Err(ParsingError::new_unexpected($iter.peek(), vec![$tok], $parsing_what)); }
     };
     ( $iter:ident, $tok:expr, $parsing_what:expr, other, $message: expr ) => {
-        if $iter.peek() != Some(&$tok ) { return Err(ParsingError::new_other($message)); }
+        if $iter.peek() != Some(&$tok ) { return Err(ParsingError::new_other($message, $parsing_what)); }
     };
 }
 

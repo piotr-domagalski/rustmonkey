@@ -4,6 +4,8 @@ use crate::token::Token;
 use crate::ast::ParsingError;
 use crate::ast::expression::{IdentifierExpression, InfixOperator};
 
+use super::parsing_what_consts::*;
+
 #[test]
 fn test_statements() {
     struct Input {
@@ -14,7 +16,7 @@ fn test_statements() {
     let inputs = [
         Input {
             tokens: vec![],
-            expected: Err(ParsingError::new_other("EOF")),
+            expected: Err(ParsingError::new_other("EOF", PARSING_WHAT_STMT)),
             next_tok: None,
         },
 
@@ -236,7 +238,7 @@ fn test_block_statement() {
                 Token::Let, Token::new_ident("x"), Token::Assign, Token::new_int(5), Token::Semicolon,
                 Token::new_ident("x"), Token::LessThan, Token::new_int(3), Token::Semicolon,
             ],
-            expected: Err(ParsingError::new_other("unclosed curly brace")),
+            expected: Err(ParsingError::new_other("unclosed curly brace", PARSING_WHAT_BLOCK_STMT)),
             next_tok: None,
         },
     ];

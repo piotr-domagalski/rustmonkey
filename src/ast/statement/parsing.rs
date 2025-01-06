@@ -16,7 +16,7 @@ impl Statement {
     pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Statement, ParsingError>
     {
         match iter.peek() {
-            None => Err(ParsingError::new_other("EOF")),
+            None => Err(ParsingError::new_other("EOF", PARSING_WHAT_STMT)),
             Some(Token::Let) => Self::parse_let_statement(iter),
             Some(Token::Return) => Self::parse_return_statement(iter),
             Some(Token::LeftCurly) => Self::parse_block_statement(iter),
@@ -63,7 +63,7 @@ impl BlockStatement {
         loop {
             match iter.peek() {
                 Some(&Token::RightCurly) => { iter.next(); break; },
-                None => { return Err(ParsingError::new_other("unclosed curly brace")); },
+                None => { return Err(ParsingError::new_other("unclosed curly brace", PARSING_WHAT_BLOCK_STMT)); },
                 _ => {
                     match Statement::parse(iter) {
                         Ok(statement) => { statements.push(statement); },
@@ -76,7 +76,7 @@ impl BlockStatement {
         if errors.is_empty() {
             return Ok(BlockStatement::new(statements));
         } else {
-            return Err(ParsingError::new_multiple(errors));
+            return Err(ParsingError::new_multiple(errors, PARSING_WHAT_BLOCK_STMT));
         }
     }
 }

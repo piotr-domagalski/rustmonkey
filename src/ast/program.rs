@@ -1,6 +1,8 @@
 use crate::ast::{TokenIter, Statement, ParsingError};
 use std::iter::Peekable;
 
+const PARSING_WHAT_PROGRAM: &str = "program";
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Program {
     pub statements: Vec<Statement>
@@ -25,7 +27,7 @@ impl Program {
         loop {
             match Statement::parse(iter) {
                 Ok(statement) => statements.push(statement),
-                Err(ParsingError::OtherError { message }) if message == "EOF" => break,
+                Err(ParsingError::OtherError { message, .. }) if message == "EOF" => break,
                 Err(error) => errors.push(error),
             }
         }
@@ -34,7 +36,7 @@ impl Program {
             Ok(Program {statements})
         }
         else {
-            Err(ParsingError::new_multiple(errors))
+            Err(ParsingError::new_multiple(errors, PARSING_WHAT_PROGRAM))
         }
     }
 }

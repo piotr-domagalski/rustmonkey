@@ -4,6 +4,7 @@ use crate::ast::{
 };
 
 mod parsing_what_consts {
+    pub const PARSING_WHAT_STMT: &str = "statement";
     pub const PARSING_WHAT_BLOCK_STMT: &str = "block statement";
     pub const PARSING_WHAT_LET_STMT: &str = "let statement";
     pub const PARSING_WHAT_RETURN_STMT: &str = "return statement";
