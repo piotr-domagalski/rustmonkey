@@ -7,6 +7,7 @@ pub enum PrefixOperator {
     Inverse,
     Negation,
 }
+
 impl PrefixOperator {
     pub fn precedence(&self) -> Precedence {
         Precedence::Prefix
@@ -110,6 +111,7 @@ pub enum Precedence{
 mod tests {
     use super::*;
     use crate::token::Token;
+    use crate::testing_common::{ParsingTest, test_parser};
     #[test]
     fn test_precedence() {
         assert!(Precedence::Lowest < Precedence::Equals);
@@ -122,91 +124,81 @@ mod tests {
 
     #[test]
     fn test_infix_operator() {
-        struct Test{
-            input: Vec<Token>,
-            expected: Result<InfixOperator, ParsingError>,
-            iter_state: Option<Token>,
-        }
+        type Test = ParsingTest<InfixOperator>;
 
         let tests = [
-            //every operator
             Test {
-                input: vec![Token::Plus],
+                test_name: "plus",
+                tokens: vec![Token::Plus],
                 expected: Ok(InfixOperator::Add),
-                iter_state: Some(Token::Plus),
+                next_token: Some(Token::Plus),
             },
 
-            //wrong token
             Test {
-                input: vec![Token::Bang],
+                test_name: "error_invalid_token",
+                tokens: vec![Token::Bang],
                 expected: Err(ParsingError::new_unexpected(
                     Some(Token::Bang).as_ref(),
                     vec![Token::Plus, Token::Minus, Token::Asterisk, Token::Slash,
                         Token::LessThan, Token::GreaterThan, Token::Equals, Token::NotEquals],
-                    "infix operator")),
-                iter_state: Some(Token::Bang),
+                    "infix operator"
+                )),
+                next_token: Some(Token::Bang),
             },
 
-            //no token
             Test {
-                input: vec![],
+                test_name: "error_no_token",
+                tokens: vec![],
                 expected: Err(ParsingError::new_unexpected(
                     None,
                     vec![Token::Plus, Token::Minus, Token::Asterisk, Token::Slash,
                         Token::LessThan, Token::GreaterThan, Token::Equals, Token::NotEquals],
-                    "infix operator")),
-                iter_state: None,
+                    "infix operator"
+                )),
+                next_token: None,
             }
         ];
 
-        for Test{input, expected, iter_state} in tests {
-            let mut iter = input.into_iter().peekable();
-            assert_eq!(InfixOperator::parse(&mut iter), expected);
-            assert_eq!(iter.peek(), iter_state.as_ref());
-        }
+        test_parser(&tests, |iter| InfixOperator::parse(iter));
     }
 
     #[test]
     fn test_prefix_operator() {
-        struct Test{
-            input: Vec<Token>,
-            expected: Result<PrefixOperator, ParsingError>,
-            iter_state: Option<Token>
-        }
+        type Test = ParsingTest<PrefixOperator>;
+
         let tests = [
             Test {
-                input: vec![Token::Minus],
+                test_name: "minus",
+                tokens: vec![Token::Minus],
                 expected: Ok(PrefixOperator::Inverse),
-                iter_state: Some(Token::Minus)
+                next_token: Some(Token::Minus)
             },
             Test {
-                input: vec![Token::Bang],
+                test_name: "bang",
+                tokens: vec![Token::Bang],
                 expected: Ok(PrefixOperator::Negation),
-                iter_state: Some(Token::Bang)
+                next_token: Some(Token::Bang)
             },
             Test {
-                input: vec![Token::new_ident("foobaz")],
+                test_name: "error_invalid_token",
+                tokens: vec![Token::new_ident("foobaz")],
                 expected: Err(ParsingError::new_unexpected(
                     Some(&Token::new_ident("foobaz")),
                     vec![Token::Bang, Token::Minus],
                     "prefix operator")),
-                iter_state: Some(Token::new_ident("foobaz")),
+                next_token: Some(Token::new_ident("foobaz")),
             },
             Test {
-
-                input: vec![],
+                test_name: "error_no_token",
+                tokens: vec![],
                 expected: Err(ParsingError::new_unexpected(
                     None,
                     vec![Token::Bang, Token::Minus],
                     "prefix operator")),
-                iter_state: None
+                next_token: None
             }
         ];
 
-        for Test{input, expected, iter_state} in tests {
-            let mut iter = input.into_iter().peekable();
-            assert_eq!(PrefixOperator::parse(&mut iter), expected);
-            assert_eq!(iter.peek(), iter_state.as_ref());
-        }
+        test_parser(&tests, |iter| PrefixOperator::parse(iter));
     }
 }

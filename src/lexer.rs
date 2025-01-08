@@ -100,10 +100,7 @@ mod tests {
     #[test]
     fn test_specials() {
         let input = "=+,;(){}[]";
-
-        let mut lexer = Lexer::new(input);
-
-        let output = [
+        let expected = [
             Some(Token::Assign),
             Some(Token::Plus),
             Some(Token::Comma),
@@ -117,23 +114,22 @@ mod tests {
             None,
         ];
 
-        for expected in output.into_iter() {
-            assert_eq!(lexer.next(), expected);
+        let mut lexer = Lexer::new(input);
+
+        for token in expected.into_iter() {
+            assert_eq!(lexer.next(), token);
         }
     }
 
     #[test]
     fn test_code_basic() {
         let input = "let five = 5;
-let ten = 10;
-let add = fn(x, y) {
-x + y;
-};
-let result = add(five, ten);";
-
-        let mut lexer = Lexer::new(input);
-
-        let output = [
+                     let ten = 10;
+                     let add = fn(x, y) {
+                     x + y;
+                     };
+                     let result = add(five, ten);";
+        let expected = [
             Some(Token::Let), Some(Token::new_ident("five")), Some(Token::Assign), Some(Token::new_int(5)), Some(Token::Semicolon),
             Some(Token::Let), Some(Token::new_ident("ten")), Some(Token::Assign), Some(Token::new_int(10)), Some(Token::Semicolon),
             Some(Token::Let), Some(Token::new_ident("add")), Some(Token::Assign), Some(Token::Function),
@@ -153,7 +149,9 @@ let result = add(five, ten);";
             None,
         ];
 
-        for expected in output {
+        let mut lexer = Lexer::new(input);
+
+        for expected in expected {
             assert_eq!(lexer.next(), expected);
         }
     }
@@ -161,18 +159,15 @@ let result = add(five, ten);";
     #[test]
     fn test_code_remaining() {
         let input = "!-/*5;
-5 < 10 > 5;
-if (5 < 10) {
-return true;
-} else {
-return false;
-}
-10 == 10;
-10 != 9;";
-
-        let mut lexer = Lexer::new(input);
-
-        let output = [
+                     5 < 10 > 5;
+                     if (5 < 10) {
+                     return true;
+                     } else {
+                     return false;
+                     }
+                     10 == 10;
+                     10 != 9;";
+        let expected = [
             Some(Token::Bang),
             Some(Token::Minus),
             Some(Token::Slash),
@@ -201,8 +196,10 @@ return false;
             None,
         ];
 
-        for expected in output {
-            assert_eq!(lexer.next(), expected);
+        let mut lexer = Lexer::new(input);
+
+        for token in expected {
+            assert_eq!(lexer.next(), token);
         }
     }
 }
