@@ -1,14 +1,13 @@
 use crate::ast::BlockStatement;
 
-//parsing error constants
 mod parsing_error_consts {
- pub const PARSING_WHAT_CALL_EXPR: &str = "call expression";
- pub const PARSING_WHAT_EXPR: &str = "expression";
- pub const PARSING_WHAT_FN_LIT: &str = "function literal";
- pub const PARSING_WHAT_GROUP_EXPR: &str = "grouped expression";
- pub const PARSING_WHAT_IDENT_EXPR: &str = "identifier expression";
- pub const PARSING_WHAT_IF_EXPR: &str = "if expression";
- pub const PARSING_WHAT_LIT_EXPR: &str = "literal";
+    pub const PARSING_WHAT_CALL_EXPR: &str = "call expression";
+    pub const PARSING_WHAT_EXPR: &str = "expression";
+    pub const PARSING_WHAT_FN_LIT: &str = "function literal";
+    pub const PARSING_WHAT_GROUP_EXPR: &str = "grouped expression";
+    pub const PARSING_WHAT_IDENT_EXPR: &str = "identifier expression";
+    pub const PARSING_WHAT_IF_EXPR: &str = "if expression";
+    pub const PARSING_WHAT_LIT_EXPR: &str = "literal";
 }
 
 mod parsing;
@@ -27,9 +26,8 @@ pub enum Expression {
     Call { callable: Box<Expression>, arguments: Vec<Expression> },
 }
 
-//builders
 impl Expression {
-    #![allow(dead_code, reason = "these are used only in the test profile")]
+    #![allow(dead_code, reason = "some of these are used only in the test profile")]
     pub fn new_ident(identifier: &str) -> Expression{
         Expression::Identifier { identifier_expression: IdentifierExpression::new(identifier) }
     }

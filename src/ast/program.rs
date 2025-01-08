@@ -13,7 +13,6 @@ impl Program {
         Program {
             statements: statements.to_vec()
         }
-
     }
 }
 

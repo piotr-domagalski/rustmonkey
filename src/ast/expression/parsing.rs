@@ -14,7 +14,6 @@ use std::iter::Peekable;
 
 use super::parsing_error_consts::*;
 
-//parsing
 impl Expression {
     pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Expression, ParsingError> {
         let expr = Self::parse_with_precedence(iter, Precedence::Lowest)?;

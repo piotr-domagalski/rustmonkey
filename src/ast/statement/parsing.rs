@@ -11,7 +11,6 @@ use crate::ast::{
 
 use super::parsing_what_consts::*;
 
-//parsing
 impl Statement {
     pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Statement, ParsingError>
     {

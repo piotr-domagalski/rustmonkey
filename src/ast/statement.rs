@@ -20,16 +20,10 @@ pub enum Statement {
     Return { expression: Expression},
     Expression {expression: Expression},
     Block { body: BlockStatement },
-    /*
-    IfElse(IfElseStatement),
-    Empty,
-    None,
-    */
 }
 
-//builders
 impl Statement {
-    pub fn new_let(identifier: IdentifierExpression, expression: Expression) -> Statement{
+    pub fn new_let(identifier: IdentifierExpression, expression: Expression) -> Statement {
         Statement::Let{ identifier, expression }
     }
     pub fn new_return(expression: Expression) -> Statement {

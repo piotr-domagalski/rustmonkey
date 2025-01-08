@@ -18,7 +18,6 @@ pub enum ParsingError {
     }
 }
 
-//builders
 impl ParsingError {
     pub fn new_unexpected(got: Option<&Token>, expected: Vec<Token>, parsing_what: &str) -> ParsingError {
         let got = match got {

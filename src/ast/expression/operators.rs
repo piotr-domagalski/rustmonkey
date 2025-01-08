@@ -96,6 +96,7 @@ impl Display for InfixOperator {
         write!(f, "{}", symbol)
     }
 }
+
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Copy, Clone)]
 pub enum Precedence{
     Lowest,
