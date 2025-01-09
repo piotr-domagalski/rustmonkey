@@ -8,7 +8,8 @@ use std::cmp::Eq;
 
 type ParsingTestExpected<T> = Result<T, ParsingError>;
 
-pub struct ParsingTest<T> {
+#[derive(Clone)]
+pub struct ParsingTest<T: Clone> {
     pub test_name: &'static str,
     pub tokens: Vec<Token>,
     pub expected: ParsingTestExpected<T>,
@@ -17,7 +18,7 @@ pub struct ParsingTest<T> {
 
 type VecTokenIntoIter = <Vec<Token> as IntoIterator>::IntoIter;
 
-pub fn test_parser<T: Debug + Display + Eq>(
+pub fn test_parser<T: Debug + Display + Eq + Clone>(
     tests: &[ParsingTest<T>],
     parser: impl Fn(&mut Peekable<VecTokenIntoIter>) -> ParsingTestExpected<T>
 ) {

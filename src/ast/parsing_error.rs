@@ -1,7 +1,7 @@
 use crate::token::Token;
 use std::fmt::{Display, Formatter};
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum ParsingError {
     UnexpectedToken {
         got: Option<Token>,

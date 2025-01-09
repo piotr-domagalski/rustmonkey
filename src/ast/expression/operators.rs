@@ -1,6 +1,7 @@
 use std::fmt::{Formatter, Display};
 use std::iter::Peekable;
 use crate::ast::{ParsingError, TokenIter};
+use crate::token::Token;
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum PrefixOperator {
@@ -13,12 +14,14 @@ impl PrefixOperator {
         Precedence::Prefix
     }
     pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<PrefixOperator, ParsingError> {
+        Self::from_token(iter.next().as_ref())
+    }
+    pub fn from_token(token: Option<&Token>) -> Result<PrefixOperator, ParsingError> {
         use PrefixOperator::*;
-        use crate::token::Token;
-        match iter.peek() {
+        match token {
             Some(Token::Minus) => Ok(Inverse),
             Some(Token::Bang) => Ok(Negation),
-            _ => Err(ParsingError::new_unexpected(iter.peek(), vec![Token::Bang, Token::Minus], "prefix operator")),
+            _ => Err(ParsingError::new_unexpected(token, vec![Token::Bang, Token::Minus], "prefix operator")),
         }
     }
 }
@@ -59,10 +62,12 @@ impl InfixOperator {
                 Precedence::Product,
         }
     }
-    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<InfixOperator, ParsingError>{
+    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<InfixOperator, ParsingError> {
+        Self::from_token(iter.next().as_ref())
+    }
+    pub fn from_token(token: Option<&Token>) -> Result<InfixOperator, ParsingError> {
         use InfixOperator::*;
-        use crate::token::Token;
-        match iter.peek() {
+        match token {
             Some(Token::Plus) => Ok(Add),
             Some(Token::Minus) => Ok(Sub),
             Some(Token::Asterisk) => Ok(Mul),
@@ -72,11 +77,11 @@ impl InfixOperator {
             Some(Token::Equals) => Ok(Equals),
             Some(Token::NotEquals) => Ok(NotEquals),
             _ => Err(ParsingError::new_unexpected(
-                iter.peek(),
+                token,
                 vec![Token::Plus, Token::Minus, Token::Asterisk, Token::Slash, Token::LessThan, Token::GreaterThan, Token::Equals, Token::NotEquals],
                 "infix operator"
             )),
-}
+        }
     }
 }
 
@@ -160,14 +165,28 @@ mod tests {
             }
         ];
 
-        test_parser(&tests, |iter| InfixOperator::parse(iter));
+        let tests_from_token: Vec<_> = tests.clone().into_iter()
+            .map(|test| Test {
+                test_name: format!("from_token_{}", test.test_name).leak(),
+                ..test })
+            .collect();
+
+        let tests_parse: Vec<_> = tests.clone().into_iter()
+            .map(|test| Test {
+                test_name: format!("parse_{}", test.test_name).leak(),
+                next_token: None,
+                ..test })
+            .collect();
+
+        test_parser(&tests_from_token, |iter| InfixOperator::from_token(iter.peek()));
+        test_parser(&tests_parse, |iter| InfixOperator::parse(iter));
     }
 
     #[test]
     fn test_prefix_operator() {
         type Test = ParsingTest<PrefixOperator>;
 
-        let tests = [
+        let tests = vec![
             Test {
                 test_name: "minus",
                 tokens: vec![Token::Minus],
@@ -200,6 +219,20 @@ mod tests {
             }
         ];
 
-        test_parser(&tests, |iter| PrefixOperator::parse(iter));
+        let tests_from_token: Vec<_> = tests.clone().into_iter()
+            .map(|test| Test {
+                test_name: format!("from_token_{}", test.test_name).leak(),
+                ..test })
+            .collect();
+
+        let tests_parse: Vec<_> = tests.clone().into_iter()
+            .map(|test| Test {
+                test_name: format!("parse_{}", test.test_name).leak(),
+                next_token: None,
+                ..test })
+            .collect();
+
+        test_parser(&tests_from_token, |iter| PrefixOperator::from_token(iter.peek()));
+        test_parser(&tests_parse, |iter| PrefixOperator::parse(iter));
     }
 }

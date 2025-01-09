@@ -44,8 +44,8 @@ impl Expression {
                 Some(Token::LeftRound) => {
                     left = Self::parse_call_expression(iter, left)?;
                 }
-                Some(_) => {
-                    let next_precedence = InfixOperator::parse(iter)?.precedence();
+                some_other => {
+                    let next_precedence = InfixOperator::from_token(some_other)?.precedence();
                     if precedence >= next_precedence {
                         return Ok(left);
                     }
@@ -65,13 +65,11 @@ impl Expression {
 
     fn parse_prefix_expression<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Expression, ParsingError> {
         let operator = PrefixOperator::parse(iter)?;
-        iter.next(); // operator parsing doesn't consume the token - do it manually
         Ok(Expression::new_prefix(operator, Expression::parse_with_precedence(iter, Precedence::Prefix)?))
     }
 
     fn parse_infix_expression<I: TokenIter>(iter: &mut Peekable<I>, left: Expression) -> Result<Expression, ParsingError> {
         let operator = InfixOperator::parse(iter)?;
-        iter.next(); // operator parsing doesn't consume the token - do it manually
         let right = Self::parse_with_precedence(iter, operator.precedence())?;
         Ok(Expression::Infix{operator, left: Box::new(left), right: Box::new(right)})
     }
