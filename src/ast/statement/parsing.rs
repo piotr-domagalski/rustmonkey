@@ -15,11 +15,11 @@ impl Statement {
     pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Statement, ParsingError>
     {
         match iter.peek() {
-            None => Err(ParsingError::new_other("EOF", PARSING_WHAT_STMT)),
+            None => Err(ParsingError::new_unexpected(None, vec![], PARSING_WHAT_STMT)),
             Some(Token::Let) => Self::parse_let_statement(iter),
             Some(Token::Return) => Self::parse_return_statement(iter),
             Some(Token::LeftCurly) => Self::parse_block_statement(iter),
-            _ => Self::parse_expression_statement(iter),
+            _ => Self::parse_expression_statement(iter), //TODO: list tokens
         }
     }
 

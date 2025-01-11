@@ -84,9 +84,21 @@ impl Display for ParsingError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::UnexpectedToken { got, expected, parsing_what } => {
-                let got = Self::display_option_token(&got);
-                let expected = Self::display_vec_token(&expected);
-                write!(f, "Unexpected token while parsing {parsing_what} - got: {got}, expected: {expected}")
+                let mut separators = vec![", ", " - "];
+                let got_str = Self::display_option_token(&got);
+                let (got_str, what) = if got.is_some() {
+                    (format!("{}got: {got_str}", separators.pop().unwrap()), "token")
+                } else {
+                    ("".to_string(), "EOF")
+                };
+                let expected_str = Self::display_vec_token(&expected);
+                let expected_str = if expected.len() == 0 {
+                    "".to_string()
+                } else {
+                    format!("{}expected: {expected_str}", separators.pop().unwrap())
+                };
+
+                write!(f, "Unexpected {what} while parsing {parsing_what}{got_str}{expected_str}")
             },
             Self::MultipleErrors { errors, parsing_what } => {
                 write!(f, "Multiple errors while parsing {parsing_what} - len={}", errors.len())?;
@@ -173,9 +185,8 @@ mod tests {
                     None,
                     vec![Token::Semicolon],
                     "test1"),
-                expected: format!("Unexpected token while parsing {} - got: {}, expected: {}",
+                expected: format!("Unexpected EOF while parsing {} - expected: {}",
                     "test1",
-                    ParsingError::display_option_token(&None),
                     ParsingError::display_vec_token(&vec![Token::Semicolon])),
             },
             Test {
@@ -193,10 +204,10 @@ mod tests {
                     Some(&Token::Bang),
                     vec![],
                     "test3"),
-                expected: format!("Unexpected token while parsing {} - got: {}, expected: {}",
+                expected: format!("Unexpected token while parsing {} - got: {}",
                     "test3",
                     ParsingError::display_option_token(&Some(Token::Bang)),
-                    ParsingError::display_vec_token(&vec![])),
+                )
             },
 
             //multiple errors

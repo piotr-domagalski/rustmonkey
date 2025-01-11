@@ -39,11 +39,11 @@ fn format_parsing_result<T: Display>(result: &ParsingTestExpected<T>) -> String 
     }
 }
 fn format_token_vec(tokens: &[Token]) -> String {
-    let mut out = format!("{}", tokens[0]);
-    for tok in &tokens[1..] {
-        out += &format!(" {}", tok);
+    let mut out = "".to_string();
+    for token in tokens {
+        out += &format!(" {token}");
     }
-    return out;
+    return out.trim().to_string()
 }
 
 fn assert_message_parsing_failed<T: Display>(

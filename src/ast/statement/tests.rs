@@ -16,7 +16,7 @@ fn test_statements() {
         Test {
             test_name: "error_eof",
             tokens: vec![],
-            expected: Err(ParsingError::new_other("EOF", PARSING_WHAT_STMT)),
+            expected: Err(ParsingError::new_unexpected(None, vec![], PARSING_WHAT_STMT)),
             next_token: None,
         },
 

@@ -24,6 +24,7 @@ impl Program {
         let mut errors: Vec<ParsingError> = vec![];
 
         loop {
+            if iter.peek().is_none() { break; }
             match Statement::parse(iter) {
                 Ok(statement) => statements.push(statement),
                 Err(ParsingError::OtherError { message, .. }) if message == "EOF" => break,
