@@ -2,11 +2,13 @@
 use super::*;
 use super::parsing_what_consts::*;
 
-use crate::token::Token;
-use crate::ast::ParsingError;
+use crate::parsing::{
+    Token,
+    ParsingError,
+    testing_common::ParsingTest,
+    testing_common::test_parser,
+};
 use crate::ast::expression::{IdentifierExpression, InfixOperator};
-
-use crate::testing_common::{ParsingTest, test_parser};
 
 #[test]
 fn test_statements() {

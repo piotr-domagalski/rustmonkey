@@ -1,4 +1,4 @@
-use crate::token::Token;
+use super::Token;
 use std::fmt::{Display, Formatter};
 
 #[derive(PartialEq, Eq, Debug, Clone)]

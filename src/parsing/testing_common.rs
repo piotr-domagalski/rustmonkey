@@ -1,7 +1,6 @@
 #![cfg(test)]
 
-use crate::ast::ParsingError;
-use crate::token::Token;
+use super::{ParsingError, Token};
 use std::iter::Peekable;
 use std::fmt::{Debug, Display};
 use std::cmp::Eq;

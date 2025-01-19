@@ -1,8 +1,6 @@
-mod token;
-mod lexer;
 mod repl;
 mod ast;
-mod testing_common;
+mod parsing;
 
 fn main() {
     println!("Welcome to the Monkey interpreter.");

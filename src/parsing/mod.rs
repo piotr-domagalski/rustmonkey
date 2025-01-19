@@ -1,7 +1,11 @@
-use crate::token::Token;
+mod token;
+mod lexer;
+mod parsing_error;
+pub mod testing_common;
 
-pub trait TokenIter: Iterator<Item = Token> {}
-impl<T: Iterator<Item = Token>> TokenIter for T {}
+pub use token::Token;
+pub use lexer::Lexer;
+pub use parsing_error::ParsingError;
 
 macro_rules! next_if_eq_else_return_err {
     ( $iter:ident, $tok:expr, $parsing_what:expr, unexpected ) => {
@@ -21,22 +25,16 @@ macro_rules! peek_if_eq_else_return_err {
     };
 }
 
-mod program;
-mod statement;
-mod expression;
-mod parsing_error;
+pub(crate) use next_if_eq_else_return_err;
+pub(crate) use peek_if_eq_else_return_err;
 
-#[allow(unused_imports, reason="program::* will remain unused until source file interpretation is implemented")]
-pub use program::*;
-pub use statement::*;
-pub use expression::*;
-pub use parsing_error::*;
+pub trait TokenIter: Iterator<Item = Token> {}
+impl<T: Iterator<Item = Token>> TokenIter for T {}
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::token::Token;
-    use crate::lexer::Lexer;
+    use crate::parsing::Token;
+    use crate::parsing::Lexer;
 
     #[test]
     fn test_token_iter_trait() {
@@ -44,8 +42,8 @@ mod tests {
         let tokens = vec![Token::Let, Token::new_ident("x"), Token::Assign, Token::new_int(5), Token::Semicolon];
 
         let lexer = Lexer::new(code);
-        let parsed_from_lexer = Program::parse(&mut lexer.peekable());
-        let parsed_from_tokens = Program::parse(&mut tokens.into_iter().peekable());
+        let parsed_from_lexer = crate::ast::Program::parse(&mut lexer.peekable());
+        let parsed_from_tokens = crate::ast::Program::parse(&mut tokens.into_iter().peekable());
 
         assert_eq!(parsed_from_tokens, parsed_from_lexer);
     }

@@ -2,10 +2,12 @@
 use super::*;
 use super::parsing_error_consts::*;
 
-use crate::token::Token;
-use crate::ast::ParsingError;
-
-use crate::testing_common::{ParsingTest, test_parser};
+use crate::parsing::{
+    Token,
+    ParsingError,
+    testing_common::ParsingTest,
+    testing_common::test_parser
+};
 
 #[test]
 fn test_identifier_expression() {
@@ -564,7 +566,7 @@ fn test_complex_expressions() {
     let tests: Vec<ParsingTest<String>> = tests.into_iter().map(|Test {test_name, input, expected, next_token}| {
         ParsingTest::<String> {
             test_name,
-            tokens: crate::lexer::Lexer::new(input).collect::<Vec<Token>>(),
+            tokens: crate::parsing::Lexer::new(input).collect::<Vec<Token>>(),
             expected: { expected.map(|s| s.to_string()) },
             next_token,
         }

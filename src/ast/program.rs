@@ -1,4 +1,5 @@
-use crate::ast::{TokenIter, Statement, ParsingError};
+use crate::parsing::{TokenIter, ParsingError};
+use crate::ast::Statement;
 use std::iter::Peekable;
 
 const PARSING_WHAT_PROGRAM: &str = "program";

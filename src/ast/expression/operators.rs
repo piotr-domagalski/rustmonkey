@@ -1,7 +1,6 @@
 use std::fmt::{Formatter, Display};
 use std::iter::Peekable;
-use crate::ast::{ParsingError, TokenIter};
-use crate::token::Token;
+use crate::parsing::{ParsingError, TokenIter, Token};
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum PrefixOperator {
@@ -116,8 +115,8 @@ pub enum Precedence{
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::token::Token;
-    use crate::testing_common::{ParsingTest, test_parser};
+    use crate::parsing::Token;
+    use crate::parsing::testing_common::{ParsingTest, test_parser};
     #[test]
     fn test_precedence() {
         assert!(Precedence::Lowest < Precedence::Equals);

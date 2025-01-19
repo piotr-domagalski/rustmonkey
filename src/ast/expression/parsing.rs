@@ -1,7 +1,5 @@
 use crate::ast::{
-    TokenIter,
     BlockStatement,
-    ParsingError,
     IdentifierExpression,
     Expression,
     Literal,
@@ -9,7 +7,13 @@ use crate::ast::{
     PrefixOperator,
     Precedence
 };
-use crate::token::Token;
+use crate::parsing::{
+    TokenIter,
+    ParsingError,
+    Token,
+    next_if_eq_else_return_err,
+    peek_if_eq_else_return_err,
+};
 use std::iter::Peekable;
 
 use super::parsing_error_consts::*;

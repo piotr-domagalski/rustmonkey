@@ -1,12 +1,15 @@
 use std::iter::Peekable;
-use crate::token::Token;
 use crate::ast::{
-    TokenIter,
     Expression,
     IdentifierExpression,
-    ParsingError,
     Statement,
     BlockStatement,
+};
+use crate::parsing::{
+    Token,
+    TokenIter,
+    ParsingError,
+    next_if_eq_else_return_err,
 };
 
 use super::parsing_what_consts::*;
