@@ -10,9 +10,10 @@ mod parsing_what_consts {
     pub const PARSING_WHAT_RETURN_STMT: &str = "return statement";
 }
 
-mod parsing;
 mod display;
-mod tests;
+
+mod parsing;
+mod parsing_tests;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Statement {

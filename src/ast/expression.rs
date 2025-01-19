@@ -10,11 +10,12 @@ mod parsing_error_consts {
     pub const PARSING_WHAT_LIT_EXPR: &str = "literal";
 }
 
-mod parsing;
 mod display;
 mod operators;
-mod tests;
 pub use operators::*;
+
+mod parsing;
+mod parsing_tests;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Expression {
