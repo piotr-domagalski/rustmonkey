@@ -1,6 +1,6 @@
 use std::fmt::{Formatter, Display};
 use std::iter::Peekable;
-use crate::parsing::{ParsingError, TokenIter, Token};
+use crate::parsing::{Parsable, ParsingError, TokenIter, Token};
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 pub enum PrefixOperator {
@@ -8,12 +8,14 @@ pub enum PrefixOperator {
     Negation,
 }
 
+impl Parsable for PrefixOperator {
+    fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<PrefixOperator, ParsingError> {
+        Self::from_token(iter.next().as_ref())
+    }
+}
 impl PrefixOperator {
     pub fn precedence(&self) -> Precedence {
         Precedence::Prefix
-    }
-    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<PrefixOperator, ParsingError> {
-        Self::from_token(iter.next().as_ref())
     }
     pub fn from_token(token: Option<&Token>) -> Result<PrefixOperator, ParsingError> {
         use PrefixOperator::*;
@@ -47,6 +49,11 @@ pub enum InfixOperator {
     NotEquals,
 }
 
+impl Parsable for InfixOperator {
+    fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<InfixOperator, ParsingError> {
+        Self::from_token(iter.next().as_ref())
+    }
+}
 impl InfixOperator {
     pub fn precedence(&self) -> Precedence {
         use InfixOperator::*;
@@ -60,9 +67,6 @@ impl InfixOperator {
             Mul | Div =>
                 Precedence::Product,
         }
-    }
-    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<InfixOperator, ParsingError> {
-        Self::from_token(iter.next().as_ref())
     }
     pub fn from_token(token: Option<&Token>) -> Result<InfixOperator, ParsingError> {
         use InfixOperator::*;

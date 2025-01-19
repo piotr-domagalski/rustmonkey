@@ -1,4 +1,4 @@
-use crate::parsing::{TokenIter, ParsingError};
+use crate::parsing::{Parsable, TokenIter, ParsingError};
 use crate::ast::Statement;
 use std::iter::Peekable;
 
@@ -17,9 +17,9 @@ impl Program {
     }
 }
 
-impl Program {
+impl Parsable for Program {
     #[allow(dead_code, reason = "this will be used once source file interpretation is implemented")]
-    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Program, ParsingError>
+    fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Program, ParsingError>
     {
         let mut statements: Vec<Statement> = vec![];
         let mut errors: Vec<ParsingError> = vec![];

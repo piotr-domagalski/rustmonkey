@@ -1,5 +1,5 @@
 use text_io::read;
-use crate::parsing::Lexer;
+use crate::parsing::{Parsable, Lexer};
 use crate::ast::Statement;
 
 pub fn start() {

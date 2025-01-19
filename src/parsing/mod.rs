@@ -31,10 +31,15 @@ pub(crate) use peek_if_eq_else_return_err;
 pub trait TokenIter: Iterator<Item = Token> {}
 impl<T: Iterator<Item = Token>> TokenIter for T {}
 
+pub trait Parsable: Sized {
+    fn parse<I: TokenIter>(iter: &mut std::iter::Peekable<I>) -> Result<Self, ParsingError>;
+}
+
 #[cfg(test)]
 mod tests {
     use crate::parsing::Token;
     use crate::parsing::Lexer;
+    use super::Parsable;
 
     #[test]
     fn test_token_iter_trait() {

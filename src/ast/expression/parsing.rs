@@ -8,6 +8,7 @@ use crate::ast::{
     Precedence
 };
 use crate::parsing::{
+    Parsable,
     TokenIter,
     ParsingError,
     Token,
@@ -18,8 +19,8 @@ use std::iter::Peekable;
 
 use super::parsing_error_consts::*;
 
-impl Expression {
-    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Expression, ParsingError> {
+impl Parsable for Expression {
+    fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Expression, ParsingError> {
         let expr = Self::parse_with_precedence(iter, Precedence::Lowest)?;
         match iter.peek() {
             Some(Token::Semicolon | Token::RightCurly | Token::Comma) | None => Ok(expr),
@@ -27,7 +28,10 @@ impl Expression {
             _ => panic!("parse_with_precedence should never leave the lexer at a token other than ;, ), or None")
         }
     }
+}
 
+//parsing helpers
+impl Expression {
     pub fn parse_with_precedence<I: TokenIter>(iter: &mut Peekable<I>, precedence: Precedence) -> Result<Expression, ParsingError> {
         //TODO: macro rule to automatically generate this match and error given token lists and fns
         let mut left = match iter.peek() {
@@ -125,8 +129,8 @@ impl Expression {
     }
 }
 
-impl IdentifierExpression {
-    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<IdentifierExpression, ParsingError> {
+impl Parsable for IdentifierExpression {
+    fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<IdentifierExpression, ParsingError> {
         match iter.peek() {
             Some(Token::Identifier(ident)) => {
                 let ident = ident.clone();
@@ -138,8 +142,8 @@ impl IdentifierExpression {
     }
 }
 
-impl Literal {
-    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Literal, ParsingError> {
+impl Parsable for Literal {
+    fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Literal, ParsingError> {
         match iter.peek() {
             Some(Token::Integer(i)) => {
                 let i = *i;
@@ -161,7 +165,10 @@ impl Literal {
                     PARSING_WHAT_LIT_EXPR)),
         }
     }
+}
 
+//parsing helpers
+impl Literal {
     fn parse_fn_literal<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Literal, ParsingError> {
         next_if_eq_else_return_err!(iter, Token::Function, PARSING_WHAT_FN_LIT, unexpected);
         next_if_eq_else_return_err!(iter, Token::LeftRound, PARSING_WHAT_FN_LIT, unexpected);

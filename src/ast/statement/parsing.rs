@@ -6,6 +6,7 @@ use crate::ast::{
     BlockStatement,
 };
 use crate::parsing::{
+    Parsable,
     Token,
     TokenIter,
     ParsingError,
@@ -14,8 +15,8 @@ use crate::parsing::{
 
 use super::parsing_what_consts::*;
 
-impl Statement {
-    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Statement, ParsingError>
+impl Parsable for Statement {
+    fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Statement, ParsingError>
     {
         match iter.peek() {
             None => Err(ParsingError::new_unexpected(None, vec![], PARSING_WHAT_STMT)),
@@ -25,7 +26,10 @@ impl Statement {
             _ => Self::parse_expression_statement(iter), //TODO: list tokens
         }
     }
+}
 
+//parsing helpers
+impl Statement {
     fn parse_let_statement<I: TokenIter>(iter: &mut Peekable<I>) -> Result<Statement, ParsingError> {
         next_if_eq_else_return_err!(iter, Token::Let, PARSING_WHAT_LET_STMT, unexpected);
         let identifier = IdentifierExpression::parse(iter)?;
@@ -57,8 +61,8 @@ impl Statement {
     }
 }
 
-impl BlockStatement {
-    pub fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<BlockStatement, ParsingError> {
+impl Parsable for BlockStatement {
+    fn parse<I: TokenIter>(iter: &mut Peekable<I>) -> Result<BlockStatement, ParsingError> {
         next_if_eq_else_return_err!(iter, Token::LeftCurly, PARSING_WHAT_BLOCK_STMT, unexpected);
         let mut statements = vec![];
         let mut errors = vec![];
