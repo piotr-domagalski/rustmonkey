@@ -6,9 +6,13 @@ use crate::parsing::{
     Parsable,
     Token,
     ParsingError,
-    testing_common::ParsingTest,
-    testing_common::test_parser,
 };
+
+use crate::testing_common::{
+    ParsingTest,
+    test_parser
+};
+
 use crate::ast::expression::{IdentifierExpression, InfixOperator};
 
 #[test]

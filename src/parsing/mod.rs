@@ -1,7 +1,6 @@
 mod token;
 mod lexer;
 mod parsing_error;
-pub mod testing_common;
 
 pub use token::Token;
 pub use lexer::Lexer;

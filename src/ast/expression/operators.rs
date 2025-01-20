@@ -120,7 +120,7 @@ pub enum Precedence{
 mod tests {
     use super::*;
     use crate::parsing::Token;
-    use crate::parsing::testing_common::{ParsingTest, test_parser};
+    use crate::testing_common::{ParsingTest, test_parser};
     #[test]
     fn test_precedence() {
         assert!(Precedence::Lowest < Precedence::Equals);
